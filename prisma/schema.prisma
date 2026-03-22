@@ -1,0 +1,58 @@
+// Proposal Card - Prisma Schema
+// Phase 1: User auth (email + phone OTP)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core user record — minimal for Phase 1
+model User {
+  id          String   @id @default(cuid())
+  email       String?  @unique
+  phone       String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Will expand in Phase 2: profile fields, QR tokens, etc.
+  sessions    Session[]
+  otpCodes    OtpCode[]
+
+  @@map("users")
+}
+
+// JWT session tracking (allows logout / session revocation)
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// OTP codes for email (phone OTP is handled by Twilio Verify)
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String?  // null if user doesn't exist yet (new signup flow)
+  target    String   // email address or phone number
+  code      String
+  type      OtpType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+
+enum OtpType {
+  EMAIL
+  PHONE
+}
