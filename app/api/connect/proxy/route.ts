@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ proxy });
   } catch (err: any) {
-    if (err.message === "TWILIO_PROXY_SERVICE_SID not configured") {
+    if (err.message === "TWILIO_MASK_NUMBER not configured") {
       return NextResponse.json({ error: "Proxy SMS not configured" }, { status: 503 });
     }
     console.error("[proxy POST]", err);
