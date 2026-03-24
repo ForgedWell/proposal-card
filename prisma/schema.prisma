@@ -1,5 +1,5 @@
 // Proposal Card - Prisma Schema
-// Phase 1: User auth (email + phone OTP)
+// Phase 2: Profile builder + communication layer
 
 generator client {
   provider = "prisma-client-js"
@@ -10,22 +10,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core user record — minimal for Phase 1
-model User {
-  id          String   @id @default(cuid())
-  email       String?  @unique
-  phone       String?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ─── User ─────────────────────────────────────────────────────────────────────
 
-  // Will expand in Phase 2: profile fields, QR tokens, etc.
-  sessions    Session[]
-  otpCodes    OtpCode[]
+model User {
+  id        String  @id @default(cuid())
+  email     String? @unique
+  phone     String? @unique
+
+  // Profile fields
+  slug        String?  @unique           // public URL: /c/[slug]
+  displayName String?
+  bio         String?
+  photoUrl    String?
+  location    String?
+  links       Json?                      // [{ label, url }]
+
+  // QR / card
+  cardToken   String?  @unique           // stable token for QR code URL
+  cardActive  Boolean  @default(false)   // owner must activate before going public
+
+  // Wali (guardian) — owner can register a guardian contact for consent routing
+  waliPhone   String?
+  waliEmail   String?
+  waliActive  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions             Session[]
+  otpCodes             OtpCode[]
+  cardScans            CardScan[]
+  connectionRequests   ConnectionRequest[]   @relation("OwnerRequests")
+  inboundRequests      ConnectionRequest[]   @relation("ProspectRequests")
+  sentMessages         Message[]             @relation("SentMessages")
+  receivedMessages     Message[]             @relation("ReceivedMessages")
+  proxyConnections     ProxyConnection[]     @relation("OwnerProxy")
 
   @@map("users")
 }
 
-// JWT session tracking (allows logout / session revocation)
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
 model Session {
   id        String   @id @default(cuid())
   userId    String
@@ -37,17 +62,16 @@ model Session {
   @@map("sessions")
 }
 
-// OTP codes for email (phone OTP is handled by Twilio Verify)
 model OtpCode {
-  id        String   @id @default(cuid())
-  userId    String?  // null if user doesn't exist yet (new signup flow)
-  target    String   // email address or phone number
+  id        String    @id @default(cuid())
+  userId    String?
+  target    String
   code      String
   type      OtpType
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("otp_codes")
 }
@@ -55,4 +79,83 @@ model OtpCode {
 enum OtpType {
   EMAIL
   PHONE
+}
+
+// ─── Card scans ───────────────────────────────────────────────────────────────
+
+model CardScan {
+  id        String   @id @default(cuid())
+  userId    String                        // card owner
+  ip        String?
+  userAgent String?
+  country   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("card_scans")
+}
+
+// ─── Connection requests (consent flow — #19) ─────────────────────────────────
+
+model ConnectionRequest {
+  id          String            @id @default(cuid())
+  ownerId     String                                    // card owner
+  prospectId  String?                                   // null if prospect not a user yet
+  prospectName String?
+  prospectContact String?                               // email or phone they provided
+  intent      String?                                   // brief intro / reason
+  status      ConnectionStatus  @default(PENDING)
+  decidedAt   DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  owner       User              @relation("OwnerRequests",    fields: [ownerId],    references: [id], onDelete: Cascade)
+  prospect    User?             @relation("ProspectRequests", fields: [prospectId], references: [id], onDelete: SetNull)
+  messages    Message[]
+  proxy       ProxyConnection?
+
+  @@map("connection_requests")
+}
+
+enum ConnectionStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  EXPIRED
+}
+
+// ─── In-app messaging (#17) ───────────────────────────────────────────────────
+
+model Message {
+  id                  String            @id @default(cuid())
+  connectionRequestId String
+  senderId            String
+  recipientId         String
+  body                String
+  readAt              DateTime?
+  createdAt           DateTime          @default(now())
+
+  connectionRequest   ConnectionRequest @relation(fields: [connectionRequestId], references: [id], onDelete: Cascade)
+  sender              User              @relation("SentMessages",     fields: [senderId],    references: [id], onDelete: Cascade)
+  recipient           User              @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+// ─── Twilio proxy connections (#16) ───────────────────────────────────────────
+
+model ProxyConnection {
+  id                  String            @id @default(cuid())
+  connectionRequestId String            @unique
+  ownerId             String
+  proxyNumber         String                              // Twilio proxy number
+  prospectNumber      String                              // prospect's real number
+  expiresAt           DateTime
+  closedAt            DateTime?
+  createdAt           DateTime          @default(now())
+
+  connectionRequest   ConnectionRequest @relation(fields: [connectionRequestId], references: [id], onDelete: Cascade)
+  owner               User              @relation("OwnerProxy", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("proxy_connections")
 }
