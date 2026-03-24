@@ -36,4 +36,24 @@
 
 ---
 
+## [Phase 1 - Testing] — 2026-03-24
+
+### Added
+- **Vitest unit test suite** — 57 tests across 6 files, all passing (`npm test`)
+  - Covers: OTP logic, JWT sessions, API routes (`send-otp`, `verify-otp`, `logout`), middleware
+  - All external dependencies mocked (Resend, Twilio, Prisma, `jose`) — no network calls
+- **Playwright E2E suite** — Chromium headless, webServer auto-start on `npm run test:e2e`
+  - 15/20 tests passing:
+    - ✅ Middleware redirects (unauthenticated access to protected routes)
+    - ✅ All login page UI tests
+    - ✅ All API route validation tests
+    - ✅ Logout flow
+  - ⏳ 5 verify page tests in progress — blocked by Next.js on-demand compilation issue in dev mode; fix: switch to prod build for E2E
+
+### Commands
+- Unit tests: `npm test`
+- E2E tests: `npm run test:e2e`
+
+---
+
 _Phase 2: Profile builder, QR token engine, shareable public card page_
