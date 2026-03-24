@@ -3,14 +3,9 @@ import { db } from "@/tests/__mocks__/db";
 
 vi.mock("@/lib/db", () => ({ db }));
 vi.mock("@/lib/email/resend", () => ({ sendOtpEmail: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/sms/twilio", () => ({
-  sendPhoneOtp: vi.fn().mockResolvedValue(undefined),
-  verifyPhoneOtp: vi.fn(),
-}));
 
 import { POST } from "@/app/api/auth/send-otp/route";
 import { sendOtpEmail } from "@/lib/email/resend";
-import { sendPhoneOtp } from "@/lib/sms/twilio";
 
 function makeRequest(body: unknown) {
   return new Request("http://localhost/api/auth/send-otp", {
@@ -60,28 +55,12 @@ describe("POST /api/auth/send-otp — email", () => {
   });
 });
 
-// ─── Phone OTP ────────────────────────────────────────────────────────────────
+// ─── Phone OTP removed — email only ──────────────────────────────────────────
 
-describe("POST /api/auth/send-otp — phone", () => {
-  it("returns 200 and calls sendPhoneOtp for valid phone", async () => {
+describe("POST /api/auth/send-otp — phone rejected", () => {
+  it("returns 400 for phone type (email only now)", async () => {
     const res = await POST(makeRequest({ type: "phone", phone: "+15551234567" }));
-    const body = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(body.success).toBe(true);
-    expect(sendPhoneOtp).toHaveBeenCalledWith("+15551234567");
-  });
-
-  it("returns 400 for phone shorter than 10 chars", async () => {
-    const res = await POST(makeRequest({ type: "phone", phone: "123" }));
     expect(res.status).toBe(400);
-  });
-
-  it("returns 500 when sendPhoneOtp throws", async () => {
-    vi.mocked(sendPhoneOtp).mockRejectedValueOnce(new Error("Twilio down"));
-
-    const res = await POST(makeRequest({ type: "phone", phone: "+15551234567" }));
-    expect(res.status).toBe(500);
   });
 });
 

@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createEmailOtp } from "@/lib/auth/otp";
 import { sendOtpEmail } from "@/lib/email/resend";
-import { sendPhoneOtp } from "@/lib/sms/twilio";
 
-const schema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("email"), email: z.string().email() }),
-  z.object({ type: z.literal("phone"), phone: z.string().min(10) }),
-]);
+// Email-only OTP — phone login removed (phone number still used for proxy SMS)
+const schema = z.object({
+  type:  z.literal("email"),
+  email: z.string().email(),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,18 +21,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = parsed.data;
-
-    if (data.type === "email") {
-      const code = await createEmailOtp(data.email);
-      await sendOtpEmail(data.email, code);
-      return NextResponse.json({ success: true, message: "Code sent to your email" });
-    }
-
-    if (data.type === "phone") {
-      await sendPhoneOtp(data.phone);
-      return NextResponse.json({ success: true, message: "Code sent via SMS" });
-    }
+    const code = await createEmailOtp(parsed.data.email);
+    await sendOtpEmail(parsed.data.email, code);
+    return NextResponse.json({ success: true, message: "Code sent to your email" });
   } catch (err) {
     console.error("[send-otp]", err);
     return NextResponse.json({ error: "Failed to send code" }, { status: 500 });

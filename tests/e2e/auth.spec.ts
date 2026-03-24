@@ -35,12 +35,10 @@ test.describe("Login page — UI", () => {
     await expect(page.getByRole("textbox")).toBeVisible();
   });
 
-  test("can toggle to phone mode", async ({ page }) => {
-    await page.getByRole("button", { name: /phone/i }).click();
-    const input = page.getByRole("textbox");
-    await expect(input).toBeVisible();
-    // Input type should switch to tel
-    await expect(input).toHaveAttribute("type", "tel");
+  test("no phone toggle — email only", async ({ page }) => {
+    // Phone login removed — toggle button should not exist
+    const phoneToggle = page.getByRole("button", { name: /phone/i });
+    await expect(phoneToggle).not.toBeVisible();
   });
 
   test("send button is disabled when input is empty", async ({ page }) => {
@@ -86,12 +84,11 @@ test.describe("Verify page — OTP verification flow", () => {
     expect(body.error).toBe("Invalid or expired code");
   });
 
-  test("phone OTP with bad code returns 401", async ({ request }) => {
+  test("phone type is rejected with 400 (email only)", async ({ request }) => {
     const res = await request.post("/api/auth/verify-otp", {
       data: { type: "phone", phone: "+15551234567", code: "000000" },
     });
-    // Twilio will reject the bad code — 401 or 500 depending on Twilio config
-    expect([401, 500]).toContain(res.status());
+    expect(res.status()).toBe(400);
   });
 
   test("rejects code that is too short", async ({ request }) => {
@@ -136,6 +133,13 @@ test.describe("API — send-otp validation", () => {
   test("rejects unknown type with 400", async ({ request }) => {
     const res = await request.post("/api/auth/send-otp", {
       data: { type: "magic", email: "test@example.com" },
+    });
+    expect(res.status()).toBe(400);
+  });
+
+  test("rejects phone type with 400 (email only)", async ({ request }) => {
+    const res = await request.post("/api/auth/send-otp", {
+      data: { type: "phone", phone: "+15551234567" },
     });
     expect(res.status()).toBe(400);
   });

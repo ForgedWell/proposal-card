@@ -2,13 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { db } from "@/tests/__mocks__/db";
 
 vi.mock("@/lib/db", () => ({ db }));
-vi.mock("@/lib/sms/twilio", () => ({
-  sendPhoneOtp: vi.fn(),
-  verifyPhoneOtp: vi.fn(),
-}));
 
 import { POST } from "@/app/api/auth/verify-otp/route";
-import { verifyPhoneOtp } from "@/lib/sms/twilio";
 
 function makeRequest(body: unknown) {
   return new Request("http://localhost/api/auth/verify-otp", {
@@ -76,42 +71,12 @@ describe("POST /api/auth/verify-otp — email", () => {
   });
 });
 
-// ─── Phone verification ───────────────────────────────────────────────────────
+// ─── Phone verification removed — email only ─────────────────────────────────
 
-describe("POST /api/auth/verify-otp — phone", () => {
-  it("returns 200 and sets session cookie on valid Twilio verification", async () => {
-    vi.mocked(verifyPhoneOtp).mockResolvedValue(true);
-    db.user.upsert.mockResolvedValue({ id: "user-phone-1" });
-
-    const res = await POST(makeRequest({ type: "phone", phone: "+15551234567", code: "654321" }));
-    const body = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(body.success).toBe(true);
-
-    const cookie = res.headers.get("set-cookie");
-    expect(cookie).toContain("session=");
-  });
-
-  it("returns 401 when Twilio returns invalid", async () => {
-    vi.mocked(verifyPhoneOtp).mockResolvedValue(false);
-
+describe("POST /api/auth/verify-otp — phone rejected", () => {
+  it("returns 400 for phone type (email only now)", async () => {
     const res = await POST(makeRequest({ type: "phone", phone: "+15551234567", code: "000000" }));
-    const body = await res.json();
-
-    expect(res.status).toBe(401);
-    expect(body.error).toBe("Invalid or expired code");
-  });
-
-  it("upserts user by phone on success", async () => {
-    vi.mocked(verifyPhoneOtp).mockResolvedValue(true);
-    db.user.upsert.mockResolvedValue({ id: "user-phone-2" });
-
-    await POST(makeRequest({ type: "phone", phone: "+15559876543", code: "654321" }));
-
-    expect(db.user.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { phone: "+15559876543" } })
-    );
+    expect(res.status).toBe(400);
   });
 });
 
