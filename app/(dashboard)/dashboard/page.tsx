@@ -2,10 +2,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { validateSession } from "@/lib/auth/jwt";
 import { getProfile } from "@/lib/profile/profile";
-import { getPendingRequests } from "@/lib/connect/requests";
+import { getPendingRequests, getAllRequests } from "@/lib/connect/requests";
+import { getApprovedConnections } from "@/lib/connect/messages";
 import ProfileForm from "./ProfileForm";
 import RequestsPanel from "./RequestsPanel";
 import CardPanel from "./CardPanel";
+import WaliPanel from "./WaliPanel";
+import MessagesPanel from "./MessagesPanel";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -15,9 +18,10 @@ export default async function DashboardPage() {
   const user = await validateSession(token);
   if (!user) redirect("/login");
 
-  const [profile, pendingRequests] = await Promise.all([
+  const [profile, pendingRequests, approvedConnections] = await Promise.all([
     getProfile(user.id),
     getPendingRequests(user.id),
+    getApprovedConnections(user.id),
   ]);
 
   if (!profile) redirect("/login");
@@ -56,8 +60,23 @@ export default async function DashboardPage() {
           <RequestsPanel requests={pendingRequests} />
         )}
 
+        {/* Messages */}
+        {approvedConnections.length > 0 && (
+          <MessagesPanel
+            connections={approvedConnections as any}
+            currentUserId={user.id}
+          />
+        )}
+
         {/* Profile form */}
         <ProfileForm profile={profile} />
+
+        {/* Wali settings */}
+        <WaliPanel settings={{
+          waliEmail:  profile.waliEmail  ?? null,
+          waliPhone:  profile.waliPhone  ?? null,
+          waliActive: profile.waliActive ?? false,
+        }} />
       </main>
     </div>
   );

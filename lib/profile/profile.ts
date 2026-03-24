@@ -64,6 +64,8 @@ export async function getProfile(userId: string) {
       links: true,
       cardToken: true,
       cardActive: true,
+      waliEmail: true,
+      waliPhone: true,
       waliActive: true,
       createdAt: true,
     },
