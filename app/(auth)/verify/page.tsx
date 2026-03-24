@@ -133,7 +133,9 @@ export default function VerifyPage() {
 
         <div className="text-center mb-8">
           <div className="w-14 h-14 bg-brand-50 border-2 border-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">{otpType === "email" ? "📧" : "📱"}</span>
+            <span className="text-sm font-semibold text-brand-600 uppercase tracking-wide">
+              {otpType === "email" ? "Email" : "Phone"}
+            </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Check your {otpType}</h1>
           <p className="text-slate-500 mt-1">
