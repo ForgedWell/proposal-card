@@ -18,7 +18,7 @@ export default function TermsPage() {
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Terms of Service</h1>
         <p className="text-sm text-slate-400 mb-10">Effective date: {effectiveDate}</p>
 
-        <div className="prose prose-slate max-w-none space-y-8 text-slate-700 leading-relaxed">
+        <div className="space-y-8 text-slate-700 leading-relaxed">
 
           <section>
             <h2 className="text-xl font-semibold text-slate-900 mb-3">1. Acceptance of Terms</h2>
