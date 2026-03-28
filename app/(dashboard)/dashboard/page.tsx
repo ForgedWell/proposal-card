@@ -15,6 +15,8 @@ import CardDesignerPanel from "./CardDesignerPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import SafetyPanel from "./SafetyPanel";
 import DashboardShell from "./DashboardShell";
+import Card3DPreview from "@/components/Card3DPreview";
+import { DEFAULT_CARD_COLOR } from "@/lib/card/templates";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -43,7 +45,17 @@ export default async function DashboardPage() {
             <AnalyticsPanel {...analytics} />
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
               <div className="xl:col-span-7 space-y-10">
-                <CardDesignerPanel profile={profile} />
+                {/* Read-only card preview */}
+                <div className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-6">
+                  <h3 className="font-serif text-xl text-sanctuary-on-surface">Your Card</h3>
+                  <Card3DPreview
+                    displayName={profile.displayName ?? "Your Name"}
+                    location={profile.location ?? null}
+                    bio={profile.bio ?? null}
+                    color={(profile as any).cardColor ?? DEFAULT_CARD_COLOR}
+                    waliActive={profile.waliActive}
+                  />
+                </div>
                 <CardPanel profile={profile} />
               </div>
               <div className="xl:col-span-5 space-y-10">
@@ -62,10 +74,7 @@ export default async function DashboardPage() {
         ),
 
         "card-designer": (
-          <div className="space-y-10">
-            <CardDesignerPanel profile={profile} />
-            <CardPanel profile={profile} />
-          </div>
+          <CardDesignerPanel profile={profile} />
         ),
 
         profile: (
