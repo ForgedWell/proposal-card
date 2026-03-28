@@ -38,11 +38,13 @@ export default async function DashboardPage() {
   if (!profile) redirect("/login");
   if (profile.role === "wali") redirect("/wali");
   if (!profile.onboardingComplete) redirect("/onboarding");
+  if (!profile.profileSetupComplete) redirect("/setup");
 
   return (
     <DashboardShell
       email={profile.email ?? profile.phone ?? ""}
       pendingCount={pendingRequests.length}
+      gender={(profile as any).gender}
       sections={{
         dashboard: (
           <div className="space-y-10">
@@ -91,11 +93,14 @@ export default async function DashboardPage() {
 
         guardian: (
           <div className="space-y-10">
-            <WaliPanel settings={{
-              waliEmail:  profile.waliEmail  ?? null,
-              waliPhone:  profile.waliPhone  ?? null,
-              waliActive: profile.waliActive ?? false,
-            }} />
+            <WaliPanel
+              settings={{
+                waliEmail:  profile.waliEmail  ?? null,
+                waliPhone:  profile.waliPhone  ?? null,
+                waliActive: profile.waliActive ?? false,
+              }}
+              gender={(profile as any).gender}
+            />
             <BlockedPanel />
           </div>
         ),

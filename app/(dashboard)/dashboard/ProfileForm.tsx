@@ -180,9 +180,21 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://myproposalcard.com";
 
+  const calculatedAge = profile.dateOfBirth ? (() => {
+    const dob = new Date(profile.dateOfBirth as string);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+  })() : null;
+
   return (
     <div id="profile" className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-8">
       <h3 className="font-serif text-xl text-sanctuary-on-surface">Personal Information</h3>
+
+      {/* Read-only identity fields */}
+      <IdentityBadge gender={profile.gender as string | null} age={calculatedAge} />
 
       <form onSubmit={handleSave} className="space-y-8">
         {/* Display Name */}
@@ -347,6 +359,23 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
 }
 
 // ─── Reusable select field ───────────────────────────────────────────────────
+
+function IdentityBadge({ gender, age }: { gender: string | null; age: number | null }) {
+  if (!gender && age === null) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {gender && (
+        <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-sanctuary-primary text-sanctuary-on-primary">
+          {gender === "sister" ? "Sister" : "Brother"}
+        </span>
+      )}
+      {age !== null && (
+        <span className="text-sm text-sanctuary-on-surface-variant">{age} years old</span>
+      )}
+      <span className="text-[10px] text-sanctuary-outline">To update gender or date of birth, contact support.</span>
+    </div>
+  );
+}
 
 function SelectField({ label, value, onChange, options }: {
   label: string;

@@ -12,29 +12,37 @@ interface NavItem {
   mobileIcon: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: "dashboard",     label: "Dashboard",         icon: "dashboard",     mobileLabel: "Home",     mobileIcon: "home" },
-  { id: "card-designer", label: "Card Customizer",   icon: "palette",       mobileLabel: "Card",     mobileIcon: "palette" },
-  { id: "profile",       label: "Profile",           icon: "person",        mobileLabel: "Edit",     mobileIcon: "edit_document" },
-  { id: "guardian",      label: "Guardian Settings",  icon: "shield_person", mobileLabel: "Guardian", mobileIcon: "security" },
-  { id: "messages",      label: "Messages",          icon: "chat_bubble",   mobileLabel: "Messages", mobileIcon: "chat_bubble" },
-  { id: "safety",        label: "Safety",            icon: "lock",          mobileLabel: "Safety",   mobileIcon: "emergency_home" },
-];
+function getNavItems(gender?: string | null): NavItem[] {
+  const guardianLabel = gender === "sister" ? "Guardian (Wali)" : "Trusted Elder";
+  const guardianMobile = gender === "sister" ? "Guardian" : "Elder";
+  return [
+    { id: "dashboard",     label: "Dashboard",       icon: "dashboard",     mobileLabel: "Home",          mobileIcon: "home" },
+    { id: "card-designer", label: "Card Customizer", icon: "palette",       mobileLabel: "Card",          mobileIcon: "palette" },
+    { id: "profile",       label: "Profile",         icon: "person",        mobileLabel: "Edit",          mobileIcon: "edit_document" },
+    { id: "guardian",      label: guardianLabel,      icon: "shield_person", mobileLabel: guardianMobile,  mobileIcon: "security" },
+    { id: "messages",      label: "Messages",        icon: "chat_bubble",   mobileLabel: "Messages",      mobileIcon: "chat_bubble" },
+    { id: "safety",        label: "Safety",          icon: "lock",          mobileLabel: "Safety",        mobileIcon: "emergency_home" },
+  ];
+}
 
 interface Props {
   email: string;
   pendingCount: number;
+  gender?: string | null;
   sections: Record<Tab, ReactNode>;
 }
+
+const VALID_TABS: Tab[] = ["dashboard", "card-designer", "profile", "guardian", "messages", "safety"];
 
 function getInitialTab(): Tab {
   if (typeof window === "undefined") return "dashboard";
   const hash = window.location.hash.replace("#", "");
-  if (NAV_ITEMS.some(n => n.id === hash)) return hash as Tab;
+  if (VALID_TABS.includes(hash as Tab)) return hash as Tab;
   return "dashboard";
 }
 
-export default function DashboardShell({ email, pendingCount, sections }: Props) {
+export default function DashboardShell({ email, pendingCount, gender, sections }: Props) {
+  const navItems = getNavItems(gender);
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
   // Read hash on mount
@@ -43,7 +51,7 @@ export default function DashboardShell({ email, pendingCount, sections }: Props)
 
     function onHashChange() {
       const hash = window.location.hash.replace("#", "");
-      if (NAV_ITEMS.some(n => n.id === hash)) {
+      if (VALID_TABS.includes(hash as Tab)) {
         setActiveTab(hash as Tab);
       }
     }
@@ -68,7 +76,7 @@ export default function DashboardShell({ email, pendingCount, sections }: Props)
         </div>
 
         <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map(item => (
+          {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => switchTab(item.id)}
@@ -121,7 +129,7 @@ export default function DashboardShell({ email, pendingCount, sections }: Props)
 
       {/* Bottom Navigation (Mobile) */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 bg-sanctuary-surface/80 backdrop-blur-md border-t border-sanctuary-outline-variant/15 z-50 rounded-t-xl">
-        {NAV_ITEMS.map(item => (
+        {navItems.map(item => (
           <button
             key={item.id}
             onClick={() => switchTab(item.id)}

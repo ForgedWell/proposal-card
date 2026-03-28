@@ -9,7 +9,12 @@ interface WaliSettings {
   waliActive: boolean;
 }
 
-export default function WaliPanel({ settings }: { settings: WaliSettings }) {
+export default function WaliPanel({ settings, gender }: { settings: WaliSettings; gender?: string | null }) {
+  const isSister = gender === "sister";
+  const guardianTitle = isSister ? "Guardian (Wali) Settings" : "Trusted Elder (Optional)";
+  const framingText = isSister
+    ? "In Islamic marriage, the Wali plays an essential role. We strongly encourage all sisters to activate Guardian oversight before accepting any connections."
+    : "Optionally add a trusted elder, father, or mentor to keep informed of your connections. This is not required but can add barakah to the process.";
   const router = useRouter();
   const [form, setForm] = useState({
     waliEmail:  settings.waliEmail  ?? "",
@@ -55,7 +60,7 @@ export default function WaliPanel({ settings }: { settings: WaliSettings }) {
           <div className="bg-sanctuary-secondary-container p-2 rounded-lg text-sanctuary-on-secondary-container">
             <span className="material-symbols-outlined">shield_person</span>
           </div>
-          <h3 className="font-serif text-xl text-sanctuary-on-surface">Guardian (Wali) Settings</h3>
+          <h3 className="font-serif text-xl text-sanctuary-on-surface">{guardianTitle}</h3>
         </div>
         <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase tracking-widest ${
           form.waliActive ? "bg-sanctuary-primary text-sanctuary-on-primary" : "bg-sanctuary-surface-high text-sanctuary-outline"
@@ -65,7 +70,7 @@ export default function WaliPanel({ settings }: { settings: WaliSettings }) {
       </div>
 
       <p className="text-sm text-sanctuary-on-surface-variant leading-relaxed">
-        Your Wali will be notified whenever someone sends a contact request via your card. They do not control approvals — only you do.
+        {framingText}
       </p>
 
       <form onSubmit={handleSave} className="space-y-4">

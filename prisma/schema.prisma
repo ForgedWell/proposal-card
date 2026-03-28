@@ -39,6 +39,12 @@ model User {
   languages      Json?                   // string[]
   intention      String?                 // max 140 chars
 
+  // Identity + setup
+  fullName             String?
+  dateOfBirth          DateTime?
+  gender               String?                       // "brother" or "sister"
+  profileSetupComplete Boolean  @default(false)
+
   // Onboarding + role
   onboardingComplete Boolean @default(false)
   role               String  @default("user")      // user / wali / admin
