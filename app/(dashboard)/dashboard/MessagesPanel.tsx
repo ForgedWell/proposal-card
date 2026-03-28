@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface Connection {
   id: string;
@@ -23,6 +23,8 @@ interface Props {
   currentUserId: string;
 }
 
+const POLL_INTERVAL = 5000;
+
 export default function MessagesPanel({ connections, currentUserId }: Props) {
   const [active, setActive]     = useState<Connection | null>(connections[0] ?? null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,16 +32,42 @@ export default function MessagesPanel({ connections, currentUserId }: Props) {
   const [sending, setSending]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const bottomRef               = useRef<HTMLDivElement>(null);
+  const pollRef                 = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Fetch messages for active connection
+  const fetchMessages = useCallback(async (connectionId: string, showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const res = await fetch(`/api/connect/messages?connectionId=${connectionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages ?? []);
+      }
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
+  // Fetch on connection change + start polling
   useEffect(() => {
-    if (!active) return;
-    setLoading(true);
-    fetch(`/api/connect/messages?connectionId=${active.id}`)
-      .then(r => r.json())
-      .then(d => setMessages(d.messages ?? []))
-      .finally(() => setLoading(false));
-  }, [active]);
+    if (!active) {
+      setMessages([]);
+      return;
+    }
 
+    fetchMessages(active.id, true);
+
+    // Start 5-second polling
+    pollRef.current = setInterval(() => {
+      fetchMessages(active.id);
+    }, POLL_INTERVAL);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [active, fetchMessages]);
+
+  // Auto-scroll on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -47,18 +75,37 @@ export default function MessagesPanel({ connections, currentUserId }: Props) {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!active || !body.trim()) return;
+
+    const messageBody = body.trim();
+    setBody("");
     setSending(true);
+
+    // Optimistic update — add message to UI immediately
+    const optimisticMsg: Message = {
+      id: `temp-${Date.now()}`,
+      body: messageBody,
+      senderId: currentUserId,
+      createdAt: new Date().toISOString(),
+      sender: { id: currentUserId, displayName: null, email: null },
+    };
+    setMessages(m => [...m, optimisticMsg]);
+
     try {
       const res = await fetch("/api/connect/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionId: active.id, body: body.trim() }),
+        body: JSON.stringify({ connectionId: active.id, body: messageBody }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setMessages(m => [...m, data.message]);
-        setBody("");
+      if (res.ok && data.message) {
+        // Replace optimistic message with real one
+        setMessages(m => m.map(msg => msg.id === optimisticMsg.id ? data.message : msg));
+      } else {
+        // Remove optimistic message on failure
+        setMessages(m => m.filter(msg => msg.id !== optimisticMsg.id));
       }
+    } catch {
+      setMessages(m => m.filter(msg => msg.id !== optimisticMsg.id));
     } finally {
       setSending(false);
     }
@@ -110,7 +157,12 @@ export default function MessagesPanel({ connections, currentUserId }: Props) {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {loading && <p className="text-xs text-sanctuary-outline text-center">Loading…</p>}
+                {loading && messages.length === 0 && (
+                  <p className="text-xs text-sanctuary-outline text-center">Loading…</p>
+                )}
+                {!loading && messages.length === 0 && (
+                  <p className="text-xs text-sanctuary-outline text-center">No messages yet. Start the conversation.</p>
+                )}
                 {messages.map(msg => {
                   const isMe = msg.senderId === currentUserId;
                   return (

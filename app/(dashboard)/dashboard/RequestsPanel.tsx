@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Request {
   id: string;
@@ -14,6 +15,7 @@ interface Request {
 type ReportCategory = "SPAM" | "HARASSMENT" | "INAPPROPRIATE" | "OTHER";
 
 export default function RequestsPanel({ requests: initial }: { requests: Request[] }) {
+  const router = useRouter();
   const [requests, setRequests] = useState(initial);
   const [loading, setLoading] = useState<string | null>(null);
   const [reporting, setReporting] = useState<string | null>(null);
@@ -29,6 +31,7 @@ export default function RequestsPanel({ requests: initial }: { requests: Request
       });
       if (res.ok) {
         setRequests(r => r.filter(req => req.id !== requestId));
+        router.refresh();
       }
     } finally {
       setLoading(null);
