@@ -37,51 +37,56 @@ export default async function DashboardPage() {
     <DashboardShell
       email={profile.email ?? profile.phone ?? ""}
       pendingCount={pendingRequests.length}
-    >
-      {/* Stats */}
-      <AnalyticsPanel {...analytics} />
+      sections={{
+        dashboard: (
+          <div className="space-y-10">
+            <AnalyticsPanel {...analytics} />
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+              <div className="xl:col-span-7 space-y-10">
+                <CardDesignerPanel profile={profile} />
+                <CardPanel profile={profile} />
+              </div>
+              <div className="xl:col-span-5 space-y-10">
+                {pendingRequests.length > 0 && (
+                  <RequestsPanel requests={pendingRequests} />
+                )}
+                {approvedConnections.length > 0 && (
+                  <MessagesPanel
+                    connections={approvedConnections as any}
+                    currentUserId={user.id}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        ),
 
-      {/* Card + Designer */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-        <div className="xl:col-span-7 space-y-10">
-          {/* Card Preview & Customizer */}
-          <CardDesignerPanel profile={profile} />
+        "card-designer": (
+          <div className="space-y-10">
+            <CardDesignerPanel profile={profile} />
+            <CardPanel profile={profile} />
+          </div>
+        ),
 
-          {/* Card controls */}
-          <CardPanel profile={profile} />
-
-          {/* Profile form */}
+        profile: (
           <ProfileForm profile={profile} />
-        </div>
+        ),
 
-        <div className="xl:col-span-5 space-y-10">
-          {/* Pending requests */}
-          {pendingRequests.length > 0 && (
-            <RequestsPanel requests={pendingRequests} />
-          )}
+        guardian: (
+          <div className="space-y-10">
+            <WaliPanel settings={{
+              waliEmail:  profile.waliEmail  ?? null,
+              waliPhone:  profile.waliPhone  ?? null,
+              waliActive: profile.waliActive ?? false,
+            }} />
+            <BlockedPanel />
+          </div>
+        ),
 
-          {/* Guardian settings */}
-          <WaliPanel settings={{
-            waliEmail:  profile.waliEmail  ?? null,
-            waliPhone:  profile.waliPhone  ?? null,
-            waliActive: profile.waliActive ?? false,
-          }} />
-
-          {/* Safety */}
+        safety: (
           <SafetyPanel />
-
-          {/* Blocked contacts */}
-          <BlockedPanel />
-        </div>
-      </div>
-
-      {/* Messages */}
-      {approvedConnections.length > 0 && (
-        <MessagesPanel
-          connections={approvedConnections as any}
-          currentUserId={user.id}
-        />
-      )}
-    </DashboardShell>
+        ),
+      }}
+    />
   );
 }
