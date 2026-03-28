@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CARD_TEMPLATES, COLOR_PRESETS, DEFAULT_CARD_COLOR } from "@/lib/card/templates";
 import type { CardTemplateName } from "@/lib/card/templates";
-import CardRenderer from "@/components/CardRenderer";
+import Card3DPreview from "@/components/Card3DPreview";
 
 interface Profile {
   cardTemplate?: string;
@@ -14,6 +14,7 @@ interface Profile {
   location?: string | null;
   links?: unknown;
   fieldVisibility?: unknown;
+  waliActive?: boolean;
 }
 
 const TEMPLATE_DESCRIPTIONS: Record<CardTemplateName, string> = {
@@ -60,24 +61,18 @@ export default function CardDesignerPanel({ profile }: { profile: Profile }) {
   return (
     <div id="card-designer" className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-8">
       <div className="flex justify-between items-end">
-        <h3 className="font-serif text-xl text-sanctuary-on-surface">Card Preview</h3>
+        <h3 className="font-serif text-xl text-sanctuary-on-surface">Marriage Card Preview</h3>
         <span className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Live Draft</span>
       </div>
 
-      {/* Live preview */}
-      <div className="relative">
-        <div className="w-full max-w-md mx-auto">
-          <CardRenderer
-            template={template}
-            color={color}
-            displayName={profile.displayName ?? "Your Name"}
-            bio={profile.bio ?? "Your bio will appear here"}
-            photoUrl={profile.photoUrl ?? null}
-            location={profile.location ?? null}
-            links={links.slice(0, 2)}
-          />
-        </div>
-      </div>
+      {/* 3D Interactive Card Preview */}
+      <Card3DPreview
+        displayName={profile.displayName ?? "Your Name"}
+        location={profile.location ?? null}
+        bio={profile.bio ?? "Your bio will appear here"}
+        color={color}
+        waliActive={profile.waliActive}
+      />
 
       {/* Customization */}
       <div className="space-y-6 pt-6 border-t border-sanctuary-surface-low">

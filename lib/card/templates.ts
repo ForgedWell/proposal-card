@@ -2,12 +2,12 @@ export const CARD_TEMPLATES = ["CLASSIC", "MINIMAL", "ELEGANT"] as const;
 export type CardTemplateName = (typeof CARD_TEMPLATES)[number];
 
 export const COLOR_PRESETS = [
-  { name: "Sky",     hex: "#0284c7" },
-  { name: "Emerald", hex: "#059669" },
-  { name: "Violet",  hex: "#7c3aed" },
-  { name: "Rose",    hex: "#e11d48" },
-  { name: "Amber",   hex: "#d97706" },
-  { name: "Slate",   hex: "#475569" },
+  { name: "Teal",    hex: "#2D5A52" },
+  { name: "Umber",   hex: "#5d4037" },
+  { name: "Charcoal", hex: "#263238" },
+  { name: "Slate",   hex: "#455a64" },
+  { name: "Forest",  hex: "#466564" },
+  { name: "Bronze",  hex: "#6d4c41" },
 ] as const;
 
-export const DEFAULT_CARD_COLOR = "#0284c7";
+export const DEFAULT_CARD_COLOR = "#2D5A52";
