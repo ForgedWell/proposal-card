@@ -1,5 +1,5 @@
 // Proposal Card - Prisma Schema
-// Phase 2: Profile builder + communication layer
+// Phase 3: Safety & order flow
 
 generator client {
   provider = "prisma-client-js"
@@ -34,6 +34,9 @@ model User {
   waliEmail   String?
   waliActive  Boolean  @default(false)
 
+  // Privacy — per-field visibility toggles
+  fieldVisibility Json?                    // { displayName: bool, bio: bool, location: bool, photoUrl: bool, links: bool }
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,6 +48,8 @@ model User {
   sentMessages         Message[]             @relation("SentMessages")
   receivedMessages     Message[]             @relation("ReceivedMessages")
   proxyConnections     ProxyConnection[]     @relation("OwnerProxy")
+  blocks               Block[]
+  reports              Report[]
 
   @@map("users")
 }
@@ -158,4 +163,54 @@ model ProxyConnection {
   owner               User              @relation("OwnerProxy", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("proxy_connections")
+}
+
+// ─── Safety: Blocking (#9) ──────────────────────────────────────────────────
+
+model Block {
+  id        String   @id @default(cuid())
+  ownerId   String                          // user who blocked
+  contact   String                          // blocked email or phone
+  reason    String?
+  createdAt DateTime @default(now())
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, contact])
+  @@map("blocks")
+}
+
+// ─── Safety: Reporting (#9) ─────────────────────────────────────────────────
+
+model Report {
+  id                  String         @id @default(cuid())
+  reporterId          String
+  connectionRequestId String?
+  contact             String?
+  category            ReportCategory
+  details             String?
+  createdAt           DateTime       @default(now())
+  reporter            User           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+enum ReportCategory {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  OTHER
+}
+
+// ─── Safety: Rate limiting (#10) ────────────────────────────────────────────
+
+model ContactAttempt {
+  id        String   @id @default(cuid())
+  ownerId   String                          // target card owner
+  ip        String?
+  contact   String?                         // requester email/phone
+  createdAt DateTime @default(now())
+
+  @@index([ownerId, ip, createdAt])
+  @@index([ownerId, contact, createdAt])
+  @@map("contact_attempts")
 }

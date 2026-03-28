@@ -27,6 +27,7 @@ export const db = {
     findUnique: vi.fn(),
     findMany:   vi.fn(),
     update:     vi.fn(),
+    updateMany: vi.fn(),
   },
   message: {
     create:     vi.fn(),
@@ -37,5 +38,19 @@ export const db = {
     create:     vi.fn(),
     findUnique: vi.fn(),
     update:     vi.fn(),
+  },
+  block: {
+    create:     vi.fn(),
+    delete:     vi.fn(),
+    findFirst:  vi.fn(),
+    findMany:   vi.fn(),
+  },
+  report: {
+    create: vi.fn(),
+  },
+  contactAttempt: {
+    create:     vi.fn(),
+    count:      vi.fn(),
+    deleteMany: vi.fn(),
   },
 };

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { z } from "zod";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 interface Props {
   ownerId: string;
@@ -21,6 +22,10 @@ export default function ContactButton({ ownerId, ownerSlug }: Props) {
   const [form, setForm] = useState({ name: "", contact: "", intent: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [smsConsent, setSmsConsent] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -46,12 +51,20 @@ export default function ContactButton({ ownerId, ownerSlug }: Props) {
       const res = await fetch("/api/connect/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId, ...parsed.data }),
+        body: JSON.stringify({ ownerId, ...parsed.data, ...(turnstileToken && { turnstileToken }) }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setServerError(data.error ?? "Something went wrong");
+        if (res.status === 429) {
+          setServerError("Too many requests. Please try again later.");
+        } else if (res.status === 403) {
+          setServerError(data.error ?? "Request blocked");
+        } else {
+          setServerError(data.error ?? "Something went wrong");
+        }
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
         setStep("form");
         return;
       }
@@ -120,6 +133,32 @@ export default function ContactButton({ ownerId, ownerSlug }: Props) {
         {errors.intent && <p className="text-xs text-red-500 mt-1">{errors.intent}</p>}
       </div>
 
+      <div className="space-y-2">
+        <p className="text-xs text-slate-400 leading-relaxed">
+          By providing your contact info, you consent to receive SMS messages from Proposal Card related to connection requests. Message frequency varies. Message and data rates may apply. Reply STOP to opt out. Reply HELP for help. View our{" "}
+          <a href="/terms" className="underline hover:text-slate-600">Terms</a> and{" "}
+          <a href="/privacy-policy" className="underline hover:text-slate-600">Privacy Policy</a>.
+        </p>
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={smsConsent}
+            onChange={(e) => setSmsConsent(e.target.checked)}
+            className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+          />
+          <span className="text-xs text-slate-600">I agree to receive SMS messages from Proposal Card</span>
+        </label>
+      </div>
+
+      {siteKey && (
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={siteKey}
+          onSuccess={setTurnstileToken}
+          options={{ size: "compact", theme: "light" }}
+        />
+      )}
+
       {serverError && (
         <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">{serverError}</p>
       )}
@@ -134,7 +173,7 @@ export default function ContactButton({ ownerId, ownerSlug }: Props) {
         </button>
         <button
           type="submit"
-          disabled={step === "submitting"}
+          disabled={step === "submitting" || !smsConsent}
           className="flex-1 btn-primary py-2.5 text-sm"
         >
           {step === "submitting" ? "Sending…" : "Send Request"}

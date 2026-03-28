@@ -13,6 +13,13 @@ const updateSchema = z.object({
     label: z.string().min(1).max(40),
     url:   z.string().url(),
   })).max(10).optional(),
+  fieldVisibility: z.object({
+    displayName: z.boolean().optional(),
+    bio:         z.boolean().optional(),
+    location:    z.boolean().optional(),
+    photoUrl:    z.boolean().optional(),
+    links:       z.boolean().optional(),
+  }).optional(),
 });
 
 async function getUser(req: NextRequest) {

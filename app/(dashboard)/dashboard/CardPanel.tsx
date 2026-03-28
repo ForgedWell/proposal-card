@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Profile {
   cardActive: boolean;
@@ -13,9 +13,19 @@ export default function CardPanel({ profile }: { profile: Profile }) {
   const [slug, setSlug]       = useState(profile.slug ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
+  const [qrSvg, setQrSvg]    = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const cardUrl = slug ? `${appUrl}/c/${slug}` : null;
+
+  useEffect(() => {
+    if (!active || !slug) { setQrSvg(null); return; }
+    fetch("/api/profile/qr")
+      .then((res) => (res.ok ? res.text() : null))
+      .then((svg) => setQrSvg(svg))
+      .catch(() => setQrSvg(null));
+  }, [active, slug]);
 
   async function toggleCard() {
     setLoading(true);
@@ -45,16 +55,28 @@ export default function CardPanel({ profile }: { profile: Profile }) {
       </div>
 
       {active && cardUrl && (
-        <div className="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between gap-3">
-          <a href={cardUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-600 hover:underline font-medium truncate">
-            {cardUrl}
-          </a>
-          <button
-            onClick={() => navigator.clipboard.writeText(cardUrl)}
-            className="text-xs text-slate-400 hover:text-slate-600 shrink-0"
-          >
-            Copy
-          </button>
+        <div className="mb-4 space-y-4">
+          <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between gap-3">
+            <a href={cardUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-600 hover:underline font-medium truncate">
+              {cardUrl}
+            </a>
+            <button
+              onClick={() => navigator.clipboard.writeText(cardUrl)}
+              className="text-xs text-slate-400 hover:text-slate-600 shrink-0"
+            >
+              Copy
+            </button>
+          </div>
+
+          {qrSvg && (
+            <div className="flex flex-col items-center gap-2">
+              <div
+                className="w-48 h-48 rounded-xl overflow-hidden border border-slate-100"
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+              <p className="text-xs text-slate-400">Scan to view your card</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -66,17 +88,46 @@ export default function CardPanel({ profile }: { profile: Profile }) {
 
       {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
 
-      <button
-        onClick={toggleCard}
-        disabled={loading}
-        className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
-          active
-            ? "bg-red-50 text-red-600 hover:bg-red-100"
-            : "btn-primary"
-        }`}
-      >
-        {loading ? "…" : active ? "Deactivate card" : "Activate card"}
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={toggleCard}
+          disabled={loading}
+          className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
+            active
+              ? "bg-red-50 text-red-600 hover:bg-red-100"
+              : "btn-primary"
+          }`}
+        >
+          {loading ? "…" : active ? "Deactivate card" : "Activate card"}
+        </button>
+
+        {active && (
+          <button
+            onClick={async () => {
+              setDownloading(true);
+              try {
+                const res = await fetch("/api/profile/card-pdf");
+                if (!res.ok) { setError("Failed to generate PDF"); return; }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "proposal-card.pdf";
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch {
+                setError("Download failed");
+              } finally {
+                setDownloading(false);
+              }
+            }}
+            disabled={downloading}
+            className="text-sm font-medium px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            {downloading ? "…" : "Download PDF"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -8,6 +8,22 @@ export interface ProfileLink {
   url: string;
 }
 
+export interface FieldVisibility {
+  displayName: boolean;
+  bio: boolean;
+  location: boolean;
+  photoUrl: boolean;
+  links: boolean;
+}
+
+export const DEFAULT_VISIBILITY: FieldVisibility = {
+  displayName: true,
+  bio: true,
+  location: true,
+  photoUrl: false,
+  links: false,
+};
+
 export interface ProfileUpdateInput {
   displayName?: string;
   bio?: string;
@@ -15,6 +31,7 @@ export interface ProfileUpdateInput {
   location?: string;
   links?: ProfileLink[];
   slug?: string;
+  fieldVisibility?: Partial<FieldVisibility>;
 }
 
 // ─── Slug ─────────────────────────────────────────────────────────────────────
@@ -67,6 +84,7 @@ export async function getProfile(userId: string) {
       waliEmail: true,
       waliPhone: true,
       waliActive: true,
+      fieldVisibility: true,
       createdAt: true,
     },
   });
@@ -90,6 +108,9 @@ export async function updateProfile(userId: string, input: ProfileUpdateInput) {
       ...(input.location !== undefined && { location: input.location }),
       ...(input.links !== undefined && { links: input.links as any }),
       ...(input.slug !== undefined && { slug: input.slug }),
+      ...(input.fieldVisibility !== undefined && {
+        fieldVisibility: { ...DEFAULT_VISIBILITY, ...input.fieldVisibility } as any,
+      }),
     },
   });
 }
@@ -130,11 +151,22 @@ export async function getPublicCard(slug: string) {
       links: true,
       cardActive: true,
       cardToken: true,
+      fieldVisibility: true,
     },
   });
 
   if (!user || !user.cardActive) return null;
-  return user;
+
+  // Apply field visibility — strip hidden fields
+  const vis = { ...DEFAULT_VISIBILITY, ...(user.fieldVisibility as Partial<FieldVisibility> | null) };
+  return {
+    ...user,
+    displayName: vis.displayName ? user.displayName : null,
+    bio: vis.bio ? user.bio : null,
+    photoUrl: vis.photoUrl ? user.photoUrl : null,
+    location: vis.location ? user.location : null,
+    links: vis.links ? user.links : null,
+  };
 }
 
 export async function getCardByToken(token: string) {

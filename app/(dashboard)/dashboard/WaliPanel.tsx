@@ -14,6 +14,7 @@ export default function WaliPanel({ settings }: { settings: WaliSettings }) {
     waliPhone:  settings.waliPhone  ?? "",
     waliActive: settings.waliActive,
   });
+  const [smsConsent, setSmsConsent] = useState(!!settings.waliPhone);
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
   const [error,  setError]  = useState("");
@@ -80,6 +81,25 @@ export default function WaliPanel({ settings }: { settings: WaliSettings }) {
           </div>
         </div>
 
+        {form.waliPhone && (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-400 leading-relaxed">
+              By providing a phone number, you consent to Proposal Card sending SMS messages to this number regarding connection requests and account notifications. Message frequency varies. Message and data rates may apply. Reply STOP to opt out. Reply HELP for help. View our{" "}
+              <a href="/terms" className="underline hover:text-slate-600">Terms of Service</a> and{" "}
+              <a href="/privacy-policy" className="underline hover:text-slate-600">Privacy Policy</a>.
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={smsConsent}
+                onChange={(e) => setSmsConsent(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-xs text-slate-600">I agree to receive SMS messages from Proposal Card</span>
+            </label>
+          </div>
+        )}
+
         <label className="flex items-center gap-3 cursor-pointer select-none">
           <div className="relative">
             <input
@@ -103,7 +123,7 @@ export default function WaliPanel({ settings }: { settings: WaliSettings }) {
         {error && <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
         <div className="flex items-center gap-3">
-          <button type="submit" disabled={saving} className="btn-primary py-2 text-sm">
+          <button type="submit" disabled={saving || (!!form.waliPhone && !smsConsent)} className="btn-primary py-2 text-sm">
             {saving ? "Saving…" : "Save"}
           </button>
           {saved && <span className="text-xs text-green-600 font-medium">Saved</span>}

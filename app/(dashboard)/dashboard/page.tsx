@@ -9,6 +9,7 @@ import RequestsPanel from "./RequestsPanel";
 import CardPanel from "./CardPanel";
 import WaliPanel from "./WaliPanel";
 import MessagesPanel from "./MessagesPanel";
+import BlockedPanel from "./BlockedPanel";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -77,6 +78,9 @@ export default async function DashboardPage() {
           waliPhone:  profile.waliPhone  ?? null,
           waliActive: profile.waliActive ?? false,
         }} />
+
+        {/* Blocked contacts */}
+        <BlockedPanel />
       </main>
     </div>
   );

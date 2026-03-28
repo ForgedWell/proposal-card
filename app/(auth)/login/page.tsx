@@ -75,7 +75,9 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          By continuing, you agree to our terms and privacy policy.
+          By continuing, you agree to our{" "}
+          <a href="/terms" className="underline hover:text-slate-600">terms</a> and{" "}
+          <a href="/privacy-policy" className="underline hover:text-slate-600">privacy policy</a>.
         </p>
       </div>
     </div>
