@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const profile = await db.user.findUnique({
     where: { id: user.id },
-    select: { slug: true, displayName: true, cardActive: true },
+    select: { slug: true, displayName: true, cardActive: true, cardTemplate: true, cardColor: true },
   });
 
   if (!profile?.cardActive || !profile.slug) {
@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
     displayName: profile.displayName ?? "Proposal Card",
     slug: profile.slug,
     appUrl,
+    cardTemplate: profile.cardTemplate,
+    cardColor: profile.cardColor ?? undefined,
   });
 
   return new NextResponse(pdf, {

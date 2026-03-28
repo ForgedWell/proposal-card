@@ -13,6 +13,8 @@ const updateSchema = z.object({
     label: z.string().min(1).max(40),
     url:   z.string().url(),
   })).max(10).optional(),
+  cardTemplate: z.enum(["CLASSIC", "MINIMAL", "ELEGANT"]).optional(),
+  cardColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color").optional(),
   fieldVisibility: z.object({
     displayName: z.boolean().optional(),
     bio:         z.boolean().optional(),

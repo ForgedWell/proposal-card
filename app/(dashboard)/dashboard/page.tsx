@@ -10,6 +10,10 @@ import CardPanel from "./CardPanel";
 import WaliPanel from "./WaliPanel";
 import MessagesPanel from "./MessagesPanel";
 import BlockedPanel from "./BlockedPanel";
+import CardDesignerPanel from "./CardDesignerPanel";
+import AnalyticsPanel from "./AnalyticsPanel";
+import SafetyPanel from "./SafetyPanel";
+import { getAnalytics } from "@/lib/profile/analytics";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -19,10 +23,11 @@ export default async function DashboardPage() {
   const user = await validateSession(token);
   if (!user) redirect("/login");
 
-  const [profile, pendingRequests, approvedConnections] = await Promise.all([
+  const [profile, pendingRequests, approvedConnections, analytics] = await Promise.all([
     getProfile(user.id),
     getPendingRequests(user.id),
     getApprovedConnections(user.id),
+    getAnalytics(user.id),
   ]);
 
   if (!profile) redirect("/login");
@@ -53,8 +58,14 @@ export default async function DashboardPage() {
       </nav>
 
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        {/* Analytics */}
+        <AnalyticsPanel {...analytics} />
+
         {/* Card status + QR */}
         <CardPanel profile={profile} />
+
+        {/* Card design */}
+        <CardDesignerPanel profile={profile} />
 
         {/* Pending requests */}
         {pendingRequests.length > 0 && (
@@ -81,6 +92,9 @@ export default async function DashboardPage() {
 
         {/* Blocked contacts */}
         <BlockedPanel />
+
+        {/* Safety */}
+        <SafetyPanel />
       </main>
     </div>
   );

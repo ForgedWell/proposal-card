@@ -21,6 +21,7 @@ export const db = {
   },
   cardScan: {
     create: vi.fn(),
+    count:  vi.fn(),
   },
   connectionRequest: {
     create:     vi.fn(),
@@ -28,6 +29,7 @@ export const db = {
     findMany:   vi.fn(),
     update:     vi.fn(),
     updateMany: vi.fn(),
+    count:      vi.fn(),
   },
   message: {
     create:     vi.fn(),
@@ -38,6 +40,8 @@ export const db = {
     create:     vi.fn(),
     findUnique: vi.fn(),
     update:     vi.fn(),
+    updateMany: vi.fn(),
+    count:      vi.fn(),
   },
   block: {
     create:     vi.fn(),

@@ -24,6 +24,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Georgia", "Cambria", "serif"],
       },
     },
   },

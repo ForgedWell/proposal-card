@@ -1,5 +1,5 @@
 // Proposal Card - Prisma Schema
-// Phase 3: Safety & order flow
+// Phase 4: Polish & launch prep
 
 generator client {
   provider = "prisma-client-js"
@@ -26,8 +26,10 @@ model User {
   links       Json?                      // [{ label, url }]
 
   // QR / card
-  cardToken   String?  @unique           // stable token for QR code URL
-  cardActive  Boolean  @default(false)   // owner must activate before going public
+  cardToken    String?       @unique           // stable token for QR code URL
+  cardActive   Boolean       @default(false)   // owner must activate before going public
+  cardTemplate CardTemplate  @default(CLASSIC) // card design template
+  cardColor    String?                         // custom header/accent color (hex)
 
   // Wali (guardian) — owner can register a guardian contact for consent routing
   waliPhone   String?
@@ -84,6 +86,12 @@ model OtpCode {
 enum OtpType {
   EMAIL
   PHONE
+}
+
+enum CardTemplate {
+  CLASSIC
+  MINIMAL
+  ELEGANT
 }
 
 // ─── Card scans ───────────────────────────────────────────────────────────────

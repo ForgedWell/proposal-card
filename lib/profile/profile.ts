@@ -32,6 +32,8 @@ export interface ProfileUpdateInput {
   links?: ProfileLink[];
   slug?: string;
   fieldVisibility?: Partial<FieldVisibility>;
+  cardTemplate?: "CLASSIC" | "MINIMAL" | "ELEGANT";
+  cardColor?: string;
 }
 
 // ─── Slug ─────────────────────────────────────────────────────────────────────
@@ -81,6 +83,8 @@ export async function getProfile(userId: string) {
       links: true,
       cardToken: true,
       cardActive: true,
+      cardTemplate: true,
+      cardColor: true,
       waliEmail: true,
       waliPhone: true,
       waliActive: true,
@@ -111,6 +115,8 @@ export async function updateProfile(userId: string, input: ProfileUpdateInput) {
       ...(input.fieldVisibility !== undefined && {
         fieldVisibility: { ...DEFAULT_VISIBILITY, ...input.fieldVisibility } as any,
       }),
+      ...(input.cardTemplate !== undefined && { cardTemplate: input.cardTemplate }),
+      ...(input.cardColor !== undefined && { cardColor: input.cardColor }),
     },
   });
 }
@@ -151,6 +157,8 @@ export async function getPublicCard(slug: string) {
       links: true,
       cardActive: true,
       cardToken: true,
+      cardTemplate: true,
+      cardColor: true,
       fieldVisibility: true,
     },
   });
