@@ -16,6 +16,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const prefillEmail = searchParams.get("email") ?? "";
   const connectionToken = searchParams.get("connection") ?? "";
+  const roleParam = searchParams.get("role") ?? "";
+  const wardParam = searchParams.get("ward") ?? "";
   const [email, setEmail]   = useState(prefillEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState("");
@@ -41,6 +43,8 @@ function LoginForm() {
       sessionStorage.setItem("otp_type", "email");
       sessionStorage.setItem("otp_target", email);
       if (connectionToken) sessionStorage.setItem("connection_token", connectionToken);
+      if (roleParam) sessionStorage.setItem("otp_role", roleParam);
+      if (wardParam) sessionStorage.setItem("otp_ward", wardParam);
       router.push("/verify");
     } catch {
       setError("Something went wrong. Please try again.");

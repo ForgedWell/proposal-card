@@ -70,11 +70,13 @@ export default function VerifyPage() {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          otpType === "email"
-            ? { type: "email", email: otpTarget, code: fullCode }
-            : { type: "phone", phone: otpTarget, code: fullCode }
-        ),
+        body: JSON.stringify({
+          type: "email",
+          email: otpTarget,
+          code: fullCode,
+          ...(typeof window !== "undefined" && sessionStorage.getItem("otp_role") && { role: sessionStorage.getItem("otp_role") }),
+          ...(typeof window !== "undefined" && sessionStorage.getItem("otp_ward") && { ward: sessionStorage.getItem("otp_ward") }),
+        }),
       });
 
       const data = await res.json();
@@ -87,7 +89,9 @@ export default function VerifyPage() {
 
       sessionStorage.removeItem("otp_type");
       sessionStorage.removeItem("otp_target");
-      router.push("/dashboard");
+      sessionStorage.removeItem("otp_role");
+      sessionStorage.removeItem("otp_ward");
+      router.push(data.redirect ?? "/dashboard");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

@@ -109,6 +109,7 @@ const PROFILE_SELECT = {
   languages: true,
   intention: true,
   onboardingComplete: true,
+  role: true,
   createdAt: true,
 } as const;
 

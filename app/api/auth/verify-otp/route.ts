@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyEmailOtp } from "@/lib/auth/otp";
 import { createSession } from "@/lib/auth/jwt";
+import { db } from "@/lib/db";
 
 // Email-only OTP — phone login removed
 const schema = z.object({
   type:  z.literal("email"),
   email: z.string().email(),
   code:  z.string().length(6),
+  role:  z.string().optional(),
+  ward:  z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -27,9 +30,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid or expired code" }, { status: 401 });
     }
 
-    const token = await createSession(result.userId);
+    // Handle wali role setup
+    if (parsed.data.role === "wali" && parsed.data.ward) {
+      const existing = await db.user.findUnique({ where: { id: result.userId }, select: { waliFor: true } });
+      const currentWards = existing?.waliFor ?? [];
+      if (!currentWards.includes(parsed.data.ward)) {
+        await db.user.update({
+          where: { id: result.userId },
+          data: { role: "wali", waliFor: { push: parsed.data.ward } },
+        });
+      }
+    }
 
-    const response = NextResponse.json({ success: true, redirect: "/dashboard" });
+    const token = await createSession(result.userId);
+    const userProfile = await db.user.findUnique({ where: { id: result.userId }, select: { role: true } });
+    const redirectTo = userProfile?.role === "wali" ? "/wali" : "/dashboard";
+
+    const response = NextResponse.json({ success: true, redirect: redirectTo });
     response.cookies.set("session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

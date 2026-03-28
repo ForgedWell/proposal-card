@@ -36,6 +36,7 @@ export default async function DashboardPage() {
   ]);
 
   if (!profile) redirect("/login");
+  if (profile.role === "wali") redirect("/wali");
   if (!profile.onboardingComplete) redirect("/onboarding");
 
   return (
