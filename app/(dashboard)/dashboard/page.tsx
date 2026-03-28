@@ -17,6 +17,8 @@ import SafetyPanel from "./SafetyPanel";
 import DashboardShell from "./DashboardShell";
 import Card3DPreview from "@/components/Card3DPreview";
 import { DEFAULT_CARD_COLOR } from "@/lib/card/templates";
+import OrderCardsWidget from "./OrderCardsWidget";
+import RecentActivityWidget from "./RecentActivityWidget";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -59,6 +61,8 @@ export default async function DashboardPage() {
                 <CardPanel profile={profile} />
               </div>
               <div className="xl:col-span-5 space-y-10">
+                <OrderCardsWidget />
+                <RecentActivityWidget />
                 {pendingRequests.length > 0 && (
                   <RequestsPanel requests={pendingRequests} />
                 )}
