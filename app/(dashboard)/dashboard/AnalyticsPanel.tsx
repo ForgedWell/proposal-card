@@ -6,7 +6,7 @@ interface AnalyticsPanelProps {
   scanCount: number;
   pendingCount: number;
   approvedCount: number;
-  activeProxyCount: number;
+  activeConnectionCount: number;
 }
 
 const POLL_INTERVAL = 30000;
@@ -15,7 +15,7 @@ const STATS_CONFIG = [
   { key: "scanCount" as const, label: "Card Views", icon: "visibility", sub: "Total views" },
   { key: "pendingCount" as const, label: "Pending", icon: "hourglass_top", sub: "Awaiting review" },
   { key: "approvedCount" as const, label: "Approved", icon: "check_circle", sub: "Ready to contact" },
-  { key: "activeProxyCount" as const, label: "Active Proxies", icon: "verified_user", sub: "Active connections" },
+  { key: "activeConnectionCount" as const, label: "Active Connections", icon: "people", sub: "Active conversations" },
 ];
 
 export default function AnalyticsPanel(initial: AnalyticsPanelProps) {

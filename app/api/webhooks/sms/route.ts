@@ -1,37 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
-import { routeInboundSms } from "@/lib/sms/proxy";
+import { db } from "@/lib/db";
+import { pauseAllConnectionsForWali, resumeLatestPausedForWali } from "@/lib/sms/wali-alerts";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://myproposalcard.com";
 
 /**
  * POST /api/webhooks/sms
  *
- * Twilio sends inbound SMS here when a message arrives at TWILIO_MASK_NUMBER.
- * Configure this URL in your Twilio number's "A message comes in" webhook.
- *
- * Twilio sends form-encoded body with fields: From, To, Body, etc.
+ * Twilio inbound SMS webhook. Handles STOP/PAUSE/RESUME keywords from Wali.
  */
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const from = formData.get("From") as string | null;
-    const body = formData.get("Body") as string | null;
+    const body = (formData.get("Body") as string ?? "").trim().toUpperCase();
 
-    if (!from || !body) {
-      return new NextResponse("<Response/>", {
-        headers: { "Content-Type": "text/xml" },
-      });
+    if (!from) return twimlResponse("");
+
+    // Find Wali by phone number
+    const wali = await db.user.findFirst({
+      where: { phone: from, role: "wali" },
+      select: { id: true, waliFor: true },
+    });
+
+    if (!wali) {
+      return twimlResponse(
+        `Proposal Card: Reply STOP to pause connections or log in to manage: ${APP_URL}/wali`
+      );
     }
 
-    await routeInboundSms(from, body);
+    if (body === "STOP" || body === "PAUSE") {
+      const count = await pauseAllConnectionsForWali(wali.id);
+      return twimlResponse(
+        `Proposal Card: ${count} connection(s) paused. Log in to review and resume: ${APP_URL}/wali`
+      );
+    }
 
-    // Return empty TwiML — we handle sending ourselves
-    return new NextResponse("<Response/>", {
-      headers: { "Content-Type": "text/xml" },
-    });
+    if (body === "RESUME") {
+      const resumed = await resumeLatestPausedForWali(wali.id);
+      return twimlResponse(
+        resumed ? "Proposal Card: Connection resumed." : "Proposal Card: No paused connections to resume."
+      );
+    }
+
+    return twimlResponse(
+      `Proposal Card: Reply STOP to pause connections or log in to manage: ${APP_URL}/wali`
+    );
   } catch (err) {
     console.error("[webhook/sms]", err);
-    return new NextResponse("<Response/>", {
-      headers: { "Content-Type": "text/xml" },
-      status: 200, // Always 200 to Twilio or it retries
-    });
+    return twimlResponse("");
   }
+}
+
+function twimlResponse(message: string) {
+  const xml = message
+    ? `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${message.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</Message></Response>`
+    : `<?xml version="1.0" encoding="UTF-8"?><Response></Response>`;
+  return new NextResponse(xml, { headers: { "Content-Type": "text/xml" }, status: 200 });
 }

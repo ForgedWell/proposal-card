@@ -11,10 +11,10 @@ export async function executePanic(userId: string): Promise<void> {
     select: { email: true, displayName: true },
   });
 
-  // 2. Close all open proxy connections
-  await db.proxyConnection.updateMany({
-    where: { ownerId: userId, closedAt: null },
-    data: { closedAt: now },
+  // 2. Close/pause all active connections
+  await db.connectionRequest.updateMany({
+    where: { ownerId: userId, status: { in: ["APPROVED", "WALI_APPROVED"] } },
+    data: { status: "CLOSED", closedAt: now },
   });
 
   // 3. Send confirmation email
@@ -29,7 +29,7 @@ export async function executePanic(userId: string): Promise<void> {
         </p>
         <ul style="color: #475569; line-height: 1.8;">
           <li>Your card is now <strong>hidden</strong> (deactivated)</li>
-          <li>All active proxy connections have been <strong>closed</strong></li>
+          <li>All active connections have been <strong>closed</strong></li>
         </ul>
         <p style="color: #475569; margin-top: 16px;">
           You can reactivate your card at any time from your dashboard when you feel safe to do so.

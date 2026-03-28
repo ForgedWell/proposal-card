@@ -39,8 +39,10 @@ model User {
   languages      Json?                   // string[]
   intention      String?                 // max 140 chars
 
-  // Onboarding
+  // Onboarding + role
   onboardingComplete Boolean @default(false)
+  role               String  @default("user")      // user / wali / admin
+  waliFor            String[]                       // user IDs this account is Guardian for
 
   // QR / card
   cardToken    String?       @unique           // stable token for QR code URL
@@ -66,9 +68,9 @@ model User {
   inboundRequests      ConnectionRequest[]   @relation("ProspectRequests")
   sentMessages         Message[]             @relation("SentMessages")
   receivedMessages     Message[]             @relation("ReceivedMessages")
-  proxyConnections     ProxyConnection[]     @relation("OwnerProxy")
   blocks               Block[]
   reports              Report[]
+  waliNotes            WaliNote[]
 
   @@map("users")
 }
@@ -137,11 +139,17 @@ model ConnectionRequest {
   status      ConnectionStatus  @default(PENDING)
   decidedAt   DateTime?
 
-  // Token-based conversation (Phase B)
-  conversationToken    String?   @unique                // UUID for unauthenticated conversation access
-  tokenExpiresAt       DateTime?                        // 30 days from approval, reset on activity
-  sentCountOwner       Int       @default(0)            // messages sent by card owner
-  sentCountRequester   Int       @default(0)            // messages sent by requester
+  // Token-based conversation
+  conversationToken    String?   @unique
+  tokenExpiresAt       DateTime?
+  sentCountOwner       Int       @default(0)
+  sentCountRequester   Int       @default(0)
+
+  // Wali actions
+  pausedBy             String?                         // "wali" or "system"
+  pausedAt             DateTime?
+  waliApprovedAt       DateTime?
+  closedAt             DateTime?
 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -149,7 +157,7 @@ model ConnectionRequest {
   owner       User              @relation("OwnerRequests",    fields: [ownerId],    references: [id], onDelete: Cascade)
   prospect    User?             @relation("ProspectRequests", fields: [prospectId], references: [id], onDelete: SetNull)
   messages    Message[]
-  proxy       ProxyConnection?
+  waliNotes   WaliNote[]
 
   @@map("connection_requests")
 }
@@ -157,8 +165,11 @@ model ConnectionRequest {
 enum ConnectionStatus {
   PENDING
   APPROVED
+  PAUSED
+  WALI_APPROVED
+  CLOSED
   DECLINED
-  EXPIRED
+  BLOCKED
 }
 
 // ─── In-app messaging (#17) ───────────────────────────────────────────────────
@@ -179,22 +190,32 @@ model Message {
   @@map("messages")
 }
 
-// ─── Twilio proxy connections (#16) ───────────────────────────────────────────
+// ─── Wali notes ──────────────────────────────────────────────────────────────
 
-model ProxyConnection {
+model WaliNote {
   id                  String            @id @default(cuid())
-  connectionRequestId String            @unique
-  ownerId             String
-  proxyNumber         String                              // Twilio proxy number
-  prospectNumber      String                              // prospect's real number
-  expiresAt           DateTime
-  closedAt            DateTime?
+  connectionRequestId String
+  waliId              String
+  content             String                              // max 300 chars
   createdAt           DateTime          @default(now())
 
   connectionRequest   ConnectionRequest @relation(fields: [connectionRequestId], references: [id], onDelete: Cascade)
-  owner               User              @relation("OwnerProxy", fields: [ownerId], references: [id], onDelete: Cascade)
+  wali                User              @relation(fields: [waliId], references: [id], onDelete: Cascade)
 
-  @@map("proxy_connections")
+  @@map("wali_notes")
+}
+
+// ─── SMS alert rate limiting ─────────────────────────────────────────────────
+
+model SmsAlert {
+  id                  String   @id @default(cuid())
+  waliId              String
+  connectionRequestId String?
+  alertType           String
+  sentAt              DateTime @default(now())
+
+  @@index([waliId, connectionRequestId, alertType, sentAt])
+  @@map("sms_alerts")
 }
 
 // ─── Safety: Blocking (#9) ──────────────────────────────────────────────────

@@ -10,6 +10,7 @@ export const db = {
   },
   user: {
     findUnique: vi.fn(),
+    findFirst:  vi.fn(),
     upsert:     vi.fn(),
     update:     vi.fn(),
   },
@@ -26,6 +27,7 @@ export const db = {
   connectionRequest: {
     create:     vi.fn(),
     findUnique: vi.fn(),
+    findFirst:  vi.fn(),
     findMany:   vi.fn(),
     update:     vi.fn(),
     updateMany: vi.fn(),
@@ -34,12 +36,6 @@ export const db = {
   message: {
     create:     vi.fn(),
     findMany:   vi.fn(),
-    updateMany: vi.fn(),
-  },
-  proxyConnection: {
-    create:     vi.fn(),
-    findUnique: vi.fn(),
-    update:     vi.fn(),
     updateMany: vi.fn(),
     count:      vi.fn(),
   },
@@ -56,5 +52,13 @@ export const db = {
     create:     vi.fn(),
     count:      vi.fn(),
     deleteMany: vi.fn(),
+  },
+  waliNote: {
+    create:   vi.fn(),
+    findMany: vi.fn(),
+  },
+  smsAlert: {
+    create: vi.fn(),
+    count:  vi.fn(),
   },
 };
