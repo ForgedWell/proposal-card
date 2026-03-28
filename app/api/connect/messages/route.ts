@@ -46,17 +46,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    // Determine recipient (the other party)
     const connection = await db.connectionRequest.findUnique({
       where: { id: parsed.data.connectionId },
     });
-    if (!connection) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!connection) {
+      return NextResponse.json({ error: "Connection not found" }, { status: 404 });
+    }
 
-    const recipientId = connection.ownerId === user.id
-      ? connection.prospectId
-      : connection.ownerId;
-
-    if (!recipientId) return NextResponse.json({ error: "Recipient not found" }, { status: 400 });
+    // Determine recipient — handle case where prospectId is null (pre-account requester)
+    let recipientId: string;
+    if (connection.ownerId === user.id) {
+      // Sender is the card owner → recipient is the prospect
+      if (connection.prospectId) {
+        recipientId = connection.prospectId;
+      } else {
+        // Prospect doesn't have an account yet — use ownerId as placeholder
+        // (message still stored and visible via token-based conversation)
+        recipientId = connection.ownerId;
+      }
+    } else if (connection.prospectId === user.id) {
+      // Sender is the prospect → recipient is the owner
+      recipientId = connection.ownerId;
+    } else {
+      return NextResponse.json({ error: "Not a party to this connection" }, { status: 403 });
+    }
 
     const message = await sendMessage({
       connectionRequestId: parsed.data.connectionId,
@@ -67,9 +80,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message });
   } catch (err: any) {
-    if (err.message === "CONNECTION_NOT_FOUND")    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (err.message === "CONNECTION_NOT_FOUND")    return NextResponse.json({ error: "Connection not found" }, { status: 404 });
     if (err.message === "CONNECTION_NOT_APPROVED") return NextResponse.json({ error: "Connection not approved" }, { status: 403 });
-    if (err.message === "NOT_A_PARTY")             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (err.message === "NOT_A_PARTY")             return NextResponse.json({ error: "Not a party" }, { status: 403 });
     console.error("[messages POST]", err);
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
   }

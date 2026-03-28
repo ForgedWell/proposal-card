@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { ConnectionStatus } from "@prisma/client";
+
+const MESSAGEABLE_STATUSES = ["APPROVED", "WALI_APPROVED"];
 
 // ─── Send a message ───────────────────────────────────────────────────────────
 
@@ -9,14 +10,14 @@ export async function sendMessage(input: {
   recipientId: string;
   body: string;
 }) {
-  // Verify the connection is approved and the sender is a party to it
   const connection = await db.connectionRequest.findUnique({
     where: { id: input.connectionRequestId },
   });
 
   if (!connection) throw new Error("CONNECTION_NOT_FOUND");
-  if (connection.status !== ConnectionStatus.APPROVED) throw new Error("CONNECTION_NOT_APPROVED");
+  if (!MESSAGEABLE_STATUSES.includes(connection.status)) throw new Error("CONNECTION_NOT_APPROVED");
 
+  // Verify sender is a party (owner or prospect)
   const isParty =
     connection.ownerId === input.senderId ||
     connection.prospectId === input.senderId;
@@ -65,7 +66,7 @@ export async function getThread(connectionRequestId: string, userId: string) {
 export async function getApprovedConnections(userId: string) {
   return db.connectionRequest.findMany({
     where: {
-      status: ConnectionStatus.APPROVED,
+      status: { in: ["APPROVED", "WALI_APPROVED"] },
       OR: [{ ownerId: userId }, { prospectId: userId }],
     },
     orderBy: { decidedAt: "desc" },

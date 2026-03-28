@@ -97,7 +97,7 @@ describe("getApprovedConnections", () => {
     expect(db.connectionRequest.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          status: ConnectionStatus.APPROVED,
+          status: { in: ["APPROVED", "WALI_APPROVED"] },
           OR: [{ ownerId: "user-1" }, { prospectId: "user-1" }],
         },
       })
