@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
-  const [email, setEmail]   = useState("");
+  const searchParams = useSearchParams();
+  const prefillEmail = searchParams.get("email") ?? "";
+  const connectionToken = searchParams.get("connection") ?? "";
+  const [email, setEmail]   = useState(prefillEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState("");
 
@@ -29,6 +40,7 @@ export default function LoginPage() {
 
       sessionStorage.setItem("otp_type", "email");
       sessionStorage.setItem("otp_target", email);
+      if (connectionToken) sessionStorage.setItem("connection_token", connectionToken);
       router.push("/verify");
     } catch {
       setError("Something went wrong. Please try again.");
@@ -80,6 +92,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  readOnly={!!prefillEmail}
                   placeholder="name@example.com"
                   required
                   className="w-full px-4 py-3.5 rounded-lg bg-sanctuary-surface-low border border-sanctuary-outline-variant/15 text-sanctuary-on-surface placeholder:text-sanctuary-outline/50 transition-all duration-300 focus:outline-none focus:border-sanctuary-primary focus:shadow-[0_0_0_2px_rgba(70,101,100,0.1)]"
