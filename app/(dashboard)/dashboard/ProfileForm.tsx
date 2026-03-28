@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Country, State, City } from "country-state-city";
 import { containsProfanity } from "@/lib/safety/profanity";
 
@@ -74,6 +75,7 @@ const DEFAULT_VIS: FieldVisibility = { displayName: true, bio: true, location: t
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ProfileForm({ profile }: { profile: Profile }) {
+  const router = useRouter();
   const [displayName, setDisplayName] = useState(profile.displayName ?? "");
   const [country, setCountry] = useState(profile.country ?? "");
   const [state, setState] = useState(profile.state ?? "");
@@ -165,6 +167,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
         return;
       }
       setSaved(true);
+      router.refresh();
     } catch {
       setError("Network error");
     } finally {

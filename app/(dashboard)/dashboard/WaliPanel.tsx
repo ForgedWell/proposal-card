@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface WaliSettings {
   waliEmail?: string | null;
@@ -9,6 +10,7 @@ interface WaliSettings {
 }
 
 export default function WaliPanel({ settings }: { settings: WaliSettings }) {
+  const router = useRouter();
   const [form, setForm] = useState({
     waliEmail:  settings.waliEmail  ?? "",
     waliPhone:  settings.waliPhone  ?? "",
@@ -38,6 +40,7 @@ export default function WaliPanel({ settings }: { settings: WaliSettings }) {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to save"); return; }
       setSaved(true);
+      router.refresh();
     } catch {
       setError("Network error");
     } finally {

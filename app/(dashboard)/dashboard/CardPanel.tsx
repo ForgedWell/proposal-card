@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Profile {
   cardActive: boolean;
@@ -9,6 +10,7 @@ interface Profile {
 }
 
 export default function CardPanel({ profile }: { profile: Profile }) {
+  const router = useRouter();
   const [active, setActive]   = useState(profile.cardActive);
   const [slug, setSlug]       = useState(profile.slug ?? "");
   const [loading, setLoading] = useState(false);
@@ -38,6 +40,7 @@ export default function CardPanel({ profile }: { profile: Profile }) {
       if (!res.ok) { setError(data.error ?? "Failed"); return; }
       setActive(!active);
       if (data.slug) setSlug(data.slug);
+      router.refresh();
     } catch {
       setError("Network error");
     } finally {

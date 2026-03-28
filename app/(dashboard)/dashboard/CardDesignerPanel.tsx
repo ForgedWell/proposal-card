@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CARD_TEMPLATES, COLOR_PRESETS, DEFAULT_CARD_COLOR } from "@/lib/card/templates";
 import type { CardTemplateName } from "@/lib/card/templates";
 import Card3DPreview from "@/components/Card3DPreview";
@@ -24,6 +25,7 @@ const TEMPLATE_DESCRIPTIONS: Record<CardTemplateName, string> = {
 };
 
 export default function CardDesignerPanel({ profile }: { profile: Profile }) {
+  const router = useRouter();
   const [template, setTemplate] = useState<CardTemplateName>(
     (profile.cardTemplate as CardTemplateName) ?? "CLASSIC"
   );
@@ -51,6 +53,7 @@ export default function CardDesignerPanel({ profile }: { profile: Profile }) {
         return;
       }
       setSaved(true);
+      router.refresh();
     } catch {
       setError("Network error");
     } finally {
