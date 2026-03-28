@@ -136,6 +136,13 @@ model ConnectionRequest {
   intent      String?                                   // brief intro / reason
   status      ConnectionStatus  @default(PENDING)
   decidedAt   DateTime?
+
+  // Token-based conversation (Phase B)
+  conversationToken    String?   @unique                // UUID for unauthenticated conversation access
+  tokenExpiresAt       DateTime?                        // 30 days from approval, reset on activity
+  sentCountOwner       Int       @default(0)            // messages sent by card owner
+  sentCountRequester   Int       @default(0)            // messages sent by requester
+
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
