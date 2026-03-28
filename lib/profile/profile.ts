@@ -34,23 +34,33 @@ export interface ProfileUpdateInput {
   fieldVisibility?: Partial<FieldVisibility>;
   cardTemplate?: "CLASSIC" | "MINIMAL" | "ELEGANT";
   cardColor?: string;
+  // Structured profile fields
+  country?: string;
+  state?: string;
+  city?: string;
+  height?: string;
+  education?: string;
+  profession?: string;
+  religiosity?: string;
+  maritalHistory?: string;
+  hasChildren?: string;
+  wantsChildren?: string;
+  languages?: string[];
+  intention?: string;
 }
 
 // ─── Slug ─────────────────────────────────────────────────────────────────────
 
 export async function generateUniqueSlug(base?: string): Promise<string> {
   const clean = base
-    ? base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30)
+    ? base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20)
     : "";
 
-  const candidates = clean
-    ? [clean, `${clean}-${nanoid(4)}`, nanoid(10)]
-    : [nanoid(10)];
+  const suffix = nanoid(4);
+  const candidate = clean ? `${clean}-${suffix}` : nanoid(10);
 
-  for (const slug of candidates) {
-    const exists = await db.user.findUnique({ where: { slug } });
-    if (!exists) return slug;
-  }
+  const exists = await db.user.findUnique({ where: { slug: candidate } });
+  if (!exists) return candidate;
 
   return nanoid(12);
 }
@@ -68,56 +78,90 @@ export async function generateCardToken(): Promise<string> {
 
 // ─── Profile CRUD ─────────────────────────────────────────────────────────────
 
+const PROFILE_SELECT = {
+  id: true,
+  email: true,
+  phone: true,
+  slug: true,
+  displayName: true,
+  bio: true,
+  photoUrl: true,
+  location: true,
+  links: true,
+  cardToken: true,
+  cardActive: true,
+  cardTemplate: true,
+  cardColor: true,
+  waliEmail: true,
+  waliPhone: true,
+  waliActive: true,
+  fieldVisibility: true,
+  country: true,
+  state: true,
+  city: true,
+  height: true,
+  education: true,
+  profession: true,
+  religiosity: true,
+  maritalHistory: true,
+  hasChildren: true,
+  wantsChildren: true,
+  languages: true,
+  intention: true,
+  createdAt: true,
+} as const;
+
 export async function getProfile(userId: string) {
   return db.user.findUnique({
     where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      phone: true,
-      slug: true,
-      displayName: true,
-      bio: true,
-      photoUrl: true,
-      location: true,
-      links: true,
-      cardToken: true,
-      cardActive: true,
-      cardTemplate: true,
-      cardColor: true,
-      waliEmail: true,
-      waliPhone: true,
-      waliActive: true,
-      fieldVisibility: true,
-      createdAt: true,
-    },
+    select: PROFILE_SELECT,
   });
 }
 
 export async function updateProfile(userId: string, input: ProfileUpdateInput) {
-  // Validate slug uniqueness if changing
-  if (input.slug) {
-    const existing = await db.user.findUnique({ where: { slug: input.slug } });
-    if (existing && existing.id !== userId) {
-      throw new Error("SLUG_TAKEN");
-    }
+  // Auto-generate slug on first save if displayName is set and slug doesn't exist
+  const user = await db.user.findUnique({ where: { id: userId }, select: { slug: true } });
+  let slugToSet: string | undefined;
+  if (!user?.slug && input.displayName) {
+    slugToSet = await generateUniqueSlug(input.displayName);
   }
+
+  // Build location string from structured fields for backward compat
+  const locationParts = [input.city, input.state, input.country].filter(Boolean);
+  const locationString = locationParts.length > 0 ? locationParts.join(", ") : undefined;
+
+  // Build bio string from intention for backward compat
+  const bioString = input.intention !== undefined ? input.intention : undefined;
 
   return db.user.update({
     where: { id: userId },
     data: {
       ...(input.displayName !== undefined && { displayName: input.displayName }),
-      ...(input.bio !== undefined && { bio: input.bio }),
+      ...(bioString !== undefined && { bio: bioString }),
       ...(input.photoUrl !== undefined && { photoUrl: input.photoUrl }),
-      ...(input.location !== undefined && { location: input.location }),
+      ...(locationString !== undefined && { location: locationString }),
       ...(input.links !== undefined && { links: input.links as any }),
-      ...(input.slug !== undefined && { slug: input.slug }),
+      ...(slugToSet && { slug: slugToSet }),
       ...(input.fieldVisibility !== undefined && {
         fieldVisibility: { ...DEFAULT_VISIBILITY, ...input.fieldVisibility } as any,
       }),
       ...(input.cardTemplate !== undefined && { cardTemplate: input.cardTemplate }),
       ...(input.cardColor !== undefined && { cardColor: input.cardColor }),
+      // Structured fields
+      ...(input.country !== undefined && { country: input.country }),
+      ...(input.state !== undefined && { state: input.state }),
+      ...(input.city !== undefined && { city: input.city }),
+      ...(input.height !== undefined && { height: input.height }),
+      ...(input.education !== undefined && { education: input.education }),
+      ...(input.profession !== undefined && { profession: input.profession }),
+      ...(input.religiosity !== undefined && { religiosity: input.religiosity }),
+      ...(input.maritalHistory !== undefined && { maritalHistory: input.maritalHistory }),
+      ...(input.hasChildren !== undefined && { hasChildren: input.hasChildren }),
+      ...(input.wantsChildren !== undefined && { wantsChildren: input.wantsChildren }),
+      ...(input.languages !== undefined && { languages: input.languages as any }),
+      ...(input.intention !== undefined && { intention: input.intention }),
     },
+    select: PROFILE_SELECT,
   });
 }
 
@@ -125,7 +169,6 @@ export async function activateCard(userId: string) {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("USER_NOT_FOUND");
 
-  // Generate slug and card token on first activation if not set
   const slug = user.slug ?? (await generateUniqueSlug(user.displayName ?? undefined));
   const cardToken = user.cardToken ?? (await generateCardToken());
 
@@ -165,7 +208,6 @@ export async function getPublicCard(slug: string) {
 
   if (!user || !user.cardActive) return null;
 
-  // Apply field visibility — strip hidden fields
   const vis = { ...DEFAULT_VISIBILITY, ...(user.fieldVisibility as Partial<FieldVisibility> | null) };
   return {
     ...user,
@@ -181,17 +223,10 @@ export async function getCardByToken(token: string) {
   const user = await db.user.findUnique({
     where: { cardToken: token },
     select: {
-      id: true,
-      slug: true,
-      displayName: true,
-      bio: true,
-      photoUrl: true,
-      location: true,
-      links: true,
-      cardActive: true,
+      id: true, slug: true, displayName: true, bio: true,
+      photoUrl: true, location: true, links: true, cardActive: true,
     },
   });
-
   if (!user || !user.cardActive) return null;
   return user;
 }
@@ -199,7 +234,5 @@ export async function getCardByToken(token: string) {
 // ─── Card scan logging ────────────────────────────────────────────────────────
 
 export async function logCardScan(userId: string, meta: { ip?: string; userAgent?: string; country?: string }) {
-  return db.cardScan.create({
-    data: { userId, ...meta },
-  });
+  return db.cardScan.create({ data: { userId, ...meta } });
 }

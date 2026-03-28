@@ -8,7 +8,6 @@ const updateSchema = z.object({
   bio:         z.string().max(500).optional(),
   photoUrl:    z.string().url().optional().or(z.literal("")),
   location:    z.string().max(100).optional(),
-  slug:        z.string().min(2).max(40).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with dashes").optional(),
   links: z.array(z.object({
     label: z.string().min(1).max(40),
     url:   z.string().url(),
@@ -22,6 +21,19 @@ const updateSchema = z.object({
     photoUrl:    z.boolean().optional(),
     links:       z.boolean().optional(),
   }).optional(),
+  // Structured profile fields
+  country:        z.string().max(100).optional(),
+  state:          z.string().max(100).optional(),
+  city:           z.string().max(100).optional(),
+  height:         z.string().max(10).optional(),
+  education:      z.string().max(50).optional(),
+  profession:     z.string().max(50).optional(),
+  religiosity:    z.string().max(50).optional(),
+  maritalHistory: z.string().max(50).optional(),
+  hasChildren:    z.string().max(30).optional(),
+  wantsChildren:  z.string().max(30).optional(),
+  languages:      z.array(z.string().max(30)).max(15).optional(),
+  intention:      z.string().max(140).optional(),
 });
 
 async function getUser(req: NextRequest) {

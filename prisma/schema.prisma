@@ -18,12 +18,26 @@ model User {
   phone     String? @unique
 
   // Profile fields
-  slug        String?  @unique           // public URL: /c/[slug]
+  slug        String?  @unique           // public URL: /c/[slug] (auto-generated)
   displayName String?
-  bio         String?
+  bio         String?                    // legacy — replaced by structured fields
   photoUrl    String?
-  location    String?
+  location    String?                    // legacy — replaced by country/state/city
   links       Json?                      // [{ label, url }]
+
+  // Structured profile (Phase 5)
+  country        String?
+  state          String?
+  city           String?
+  height         String?
+  education      String?
+  profession     String?
+  religiosity    String?
+  maritalHistory String?
+  hasChildren    String?
+  wantsChildren  String?
+  languages      Json?                   // string[]
+  intention      String?                 // max 140 chars
 
   // QR / card
   cardToken    String?       @unique           // stable token for QR code URL

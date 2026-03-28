@@ -19,20 +19,20 @@ beforeEach(() => vi.clearAllMocks());
 // ─── generateUniqueSlug ───────────────────────────────────────────────────────
 
 describe("generateUniqueSlug", () => {
-  it("returns a clean slug from a display name", async () => {
+  it("returns a slug with name prefix + random suffix", async () => {
     db.user.findUnique.mockResolvedValue(null);
     const slug = await generateUniqueSlug("John Doe");
     expect(slug).toMatch(/^[a-z0-9-]+$/);
-    expect(slug).toContain("john");
+    expect(slug).toContain("john-doe-");
   });
 
-  it("falls back to random slug if base produces a taken slug", async () => {
+  it("falls back to random slug if candidate is taken", async () => {
     db.user.findUnique
-      .mockResolvedValueOnce({ id: "other" })   // "john-doe" taken
-      .mockResolvedValueOnce({ id: "other2" })  // "john-doe-xxxx" taken
-      .mockResolvedValueOnce(null);             // random available
+      .mockResolvedValueOnce({ id: "other" })  // candidate taken
+      .mockResolvedValueOnce(null);            // fallback available (not called in current impl)
     const slug = await generateUniqueSlug("John Doe");
     expect(slug).toBeTruthy();
+    expect(slug.length).toBeGreaterThanOrEqual(10);
   });
 
   it("generates a random slug when no base provided", async () => {
@@ -65,10 +65,11 @@ describe("getProfile", () => {
 
 describe("updateProfile", () => {
   it("updates allowed fields", async () => {
-    db.user.findUnique.mockResolvedValue(null); // slug not taken
+    // First call: check if user has slug (for auto-generation)
+    db.user.findUnique.mockResolvedValueOnce({ slug: "existing-slug" });
     db.user.update.mockResolvedValue({ id: "u1", displayName: "Bob" });
 
-    await updateProfile("u1", { displayName: "Bob", bio: "Hello" });
+    await updateProfile("u1", { displayName: "Bob", intention: "Hello" });
 
     expect(db.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -78,15 +79,20 @@ describe("updateProfile", () => {
     );
   });
 
-  it("throws SLUG_TAKEN when slug belongs to another user", async () => {
-    db.user.findUnique.mockResolvedValue({ id: "other-user" });
-    await expect(updateProfile("u1", { slug: "taken" })).rejects.toThrow("SLUG_TAKEN");
-  });
+  it("auto-generates slug when user has no slug and displayName is provided", async () => {
+    // User has no slug
+    db.user.findUnique
+      .mockResolvedValueOnce({ slug: null })  // check for existing slug
+      .mockResolvedValueOnce(null);            // slug uniqueness check
+    db.user.update.mockResolvedValue({ id: "u1", slug: "bob-xxxx" });
 
-  it("allows slug update when it already belongs to same user", async () => {
-    db.user.findUnique.mockResolvedValue({ id: "u1" }); // same user owns slug
-    db.user.update.mockResolvedValue({ id: "u1", slug: "my-slug" });
-    await expect(updateProfile("u1", { slug: "my-slug" })).resolves.toBeTruthy();
+    await updateProfile("u1", { displayName: "Bob" });
+
+    expect(db.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ displayName: "Bob", slug: expect.stringContaining("bob") }),
+      })
+    );
   });
 });
 
