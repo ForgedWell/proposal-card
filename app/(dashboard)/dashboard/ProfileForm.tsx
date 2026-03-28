@@ -87,23 +87,23 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6">
-      <h2 className="font-semibold text-slate-900 mb-5">Edit Profile</h2>
-      <form onSubmit={handleSave} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-slate-600">Display name</label>
-              <button type="button" onClick={() => toggleVis("displayName")} className={`text-xs ${visibility.displayName ? "text-green-600" : "text-slate-400"}`}>
+    <div id="profile" className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-8">
+      <h3 className="font-serif text-xl text-sanctuary-on-surface">Personal Information</h3>
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Display Name</label>
+              <button type="button" onClick={() => toggleVis("displayName")} className={`text-[10px] ${visibility.displayName ? "text-sanctuary-primary" : "text-sanctuary-outline"}`}>
                 {visibility.displayName ? "Public" : "Hidden"}
               </button>
             </div>
             <input name="displayName" value={form.displayName} onChange={handleChange} placeholder="Your name" className="input-field text-sm" />
           </div>
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-slate-600">Location</label>
-              <button type="button" onClick={() => toggleVis("location")} className={`text-xs ${visibility.location ? "text-green-600" : "text-slate-400"}`}>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Location</label>
+              <button type="button" onClick={() => toggleVis("location")} className={`text-[10px] ${visibility.location ? "text-sanctuary-primary" : "text-sanctuary-outline"}`}>
                 {visibility.location ? "Public" : "Hidden"}
               </button>
             </div>
@@ -111,28 +111,28 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
           </div>
         </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-medium text-slate-600">Bio</label>
-            <button type="button" onClick={() => toggleVis("bio")} className={`text-xs ${visibility.bio ? "text-green-600" : "text-slate-400"}`}>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Bio</label>
+            <button type="button" onClick={() => toggleVis("bio")} className={`text-[10px] ${visibility.bio ? "text-sanctuary-primary" : "text-sanctuary-outline"}`}>
               {visibility.bio ? "Public" : "Hidden"}
             </button>
           </div>
-          <textarea name="bio" value={form.bio} onChange={handleChange} placeholder="Short bio..." rows={3} className="input-field text-sm resize-none" />
+          <textarea name="bio" value={form.bio} onChange={handleChange} placeholder="Short bio..." rows={4} className="input-field text-sm resize-none" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Card URL slug</label>
-            <div className="flex items-center">
-              <span className="text-xs text-slate-400 bg-slate-50 border border-r-0 border-slate-200 rounded-l-lg px-2 py-2.5">/c/</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Card URL</label>
+            <div className="flex">
+              <span className="bg-sanctuary-surface-container px-3 flex items-center text-xs text-sanctuary-outline rounded-l-lg border-r border-sanctuary-outline-variant/10">/c/</span>
               <input name="slug" value={form.slug} onChange={handleChange} placeholder="your-name" className="input-field text-sm rounded-l-none flex-1" />
             </div>
           </div>
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-slate-600">Photo URL</label>
-              <button type="button" onClick={() => toggleVis("photoUrl")} className={`text-xs ${visibility.photoUrl ? "text-green-600" : "text-slate-400"}`}>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Photo URL</label>
+              <button type="button" onClick={() => toggleVis("photoUrl")} className={`text-[10px] ${visibility.photoUrl ? "text-sanctuary-primary" : "text-sanctuary-outline"}`}>
                 {visibility.photoUrl ? "Public" : "Hidden"}
               </button>
             </div>
@@ -142,33 +142,33 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
 
         {/* Links */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-slate-600">Links</label>
-              <button type="button" onClick={() => toggleVis("links")} className={`text-xs ${visibility.links ? "text-green-600" : "text-slate-400"}`}>
+              <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Links</label>
+              <button type="button" onClick={() => toggleVis("links")} className={`text-[10px] ${visibility.links ? "text-sanctuary-primary" : "text-sanctuary-outline"}`}>
                 {visibility.links ? "Public" : "Hidden"}
               </button>
             </div>
-            <button type="button" onClick={addLink} className="text-xs text-brand-600 hover:text-brand-700 font-medium">+ Add link</button>
+            <button type="button" onClick={addLink} className="text-xs text-sanctuary-primary hover:text-sanctuary-primary-dim font-medium">+ Add link</button>
           </div>
           <div className="space-y-2">
             {links.map((link, i) => (
               <div key={i} className="flex gap-2 items-center">
                 <input value={link.label} onChange={e => updateLink(i, "label", e.target.value)} placeholder="Label" className="input-field text-sm w-28" />
                 <input value={link.url} onChange={e => updateLink(i, "url", e.target.value)} placeholder="https://..." className="input-field text-sm flex-1" />
-                <button type="button" onClick={() => removeLink(i)} className="text-slate-300 hover:text-red-400 transition-colors text-lg leading-none">x</button>
+                <button type="button" onClick={() => removeLink(i)} className="text-sanctuary-outline hover:text-sanctuary-tertiary transition-colors text-lg leading-none">x</button>
               </div>
             ))}
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+        {error && <p className="text-sm text-sanctuary-error bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
-        <div className="flex items-center gap-3 pt-1">
-          <button type="submit" disabled={saving} className="btn-primary py-2 text-sm">
-            {saving ? "Saving…" : "Save profile"}
+        <div className="flex items-center gap-3 pt-2">
+          <button type="submit" disabled={saving} className="btn-primary py-3 text-sm max-w-[200px]">
+            {saving ? "Saving…" : "Save Profile"}
           </button>
-          {saved && <span className="text-xs text-green-600 font-medium">Saved</span>}
+          {saved && <span className="text-xs text-sanctuary-primary font-medium">Saved</span>}
         </div>
       </form>
     </div>

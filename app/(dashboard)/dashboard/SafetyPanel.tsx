@@ -34,41 +34,47 @@ export default function SafetyPanel() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6">
-      <h2 className="font-semibold text-slate-900 mb-4">Safety</h2>
-
-      {/* Tips */}
-      <div className="bg-blue-50 rounded-xl p-4 mb-5">
-        <p className="text-xs font-medium text-blue-800 mb-2">Safety Tips</p>
-        <ul className="text-xs text-blue-700 space-y-1.5 list-disc list-inside">
-          <li>Only share your card with people you feel comfortable connecting with</li>
-          <li>Review each contact request before approving — check their intent</li>
-          <li>Use the Wali (guardian) feature to have a trusted person notified of requests</li>
-          <li>Block or report any contacts that make you uncomfortable</li>
-        </ul>
+    <div id="safety" className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="bg-sanctuary-surface-low p-2 rounded-lg text-sanctuary-on-surface">
+          <span className="material-symbols-outlined">security</span>
+        </div>
+        <h3 className="font-serif text-xl text-sanctuary-on-surface">Integrity & Safety</h3>
       </div>
 
-      {/* Panic button */}
-      <div className="bg-red-50 rounded-xl p-4">
-        <p className="text-xs font-medium text-red-800 mb-1">Emergency: Hide Profile</p>
-        <p className="text-xs text-red-600 mb-3">
-          This will immediately deactivate your card, close all active proxy connections, and send you a confirmation email.
-        </p>
+      <ul className="space-y-4">
+        <li className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-sanctuary-primary text-sm mt-0.5">check_circle</span>
+          <p className="text-sm text-sanctuary-on-surface-variant">Never share personal home addresses until identity is verified via Wali.</p>
+        </li>
+        <li className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-sanctuary-primary text-sm mt-0.5">check_circle</span>
+          <p className="text-sm text-sanctuary-on-surface-variant">Use the in-app messaging system to maintain a professional log of all chats.</p>
+        </li>
+        <li className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-sanctuary-primary text-sm mt-0.5">check_circle</span>
+          <p className="text-sm text-sanctuary-on-surface-variant">Report any behavior that lacks the dignity of the community standards.</p>
+        </li>
+      </ul>
+
+      <div className="pt-6 border-t border-sanctuary-surface-low">
+        <p className="text-xs text-sanctuary-outline mb-4 italic">In case of harassment or unauthorized access, use the emergency action below.</p>
 
         {activated ? (
-          <p className="text-xs font-medium text-green-700 bg-green-50 rounded-lg px-3 py-2">
+          <p className="text-xs font-medium text-sanctuary-primary bg-sanctuary-primary-container rounded-xl px-4 py-3">
             Safety lockdown activated. Your card is now hidden and all connections are closed.
           </p>
         ) : (
           <button
             onClick={handlePanic}
             disabled={loading}
-            className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
+            className={`w-full py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-[0px_4px_12px_rgba(158,65,66,0.2)] ${
               confirming
-                ? "bg-red-700 text-white hover:bg-red-800"
-                : "bg-red-600 text-white hover:bg-red-700"
+                ? "bg-sanctuary-tertiary-dim text-sanctuary-on-tertiary"
+                : "bg-sanctuary-tertiary text-sanctuary-on-tertiary hover:bg-sanctuary-error"
             }`}
           >
+            <span className="material-symbols-outlined">emergency_home</span>
             {loading ? "Activating…" : confirming ? "Are you sure? Click again to confirm" : "Activate Safety Lockdown"}
           </button>
         )}

@@ -22,11 +22,9 @@ export default function VerifyPage() {
     }
     setOtpType(type);
     setOtpTarget(target);
-    // Focus first input
     inputRefs.current[0]?.focus();
   }, [router]);
 
-  // Countdown timer for resend
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
@@ -44,7 +42,6 @@ export default function VerifyPage() {
       inputRefs.current[idx + 1]?.focus();
     }
 
-    // Auto-submit when all 6 digits entered
     if (digit && idx === 5 && next.every((d) => d)) {
       submitCode(next.join(""));
     }
@@ -122,71 +119,135 @@ export default function VerifyPage() {
       : otpTarget.replace(/(\+\d{1,3})(\d+)(\d{2})/, "$1 *** $3");
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <button
-          onClick={() => router.push("/login")}
-          className="text-sm text-slate-500 hover:text-slate-700 mb-8 flex items-center gap-1"
-        >
-          ← Back
-        </button>
+    <div className="bg-sanctuary-surface min-h-screen flex flex-col selection:bg-sanctuary-primary-container">
+      {/* Geometric pattern overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: "radial-gradient(#466564 0.5px, transparent 0.5px), radial-gradient(#466564 0.5px, #fafaf5 0.5px)",
+          backgroundSize: "40px 40px",
+          backgroundPosition: "0 0, 20px 20px",
+        }}
+      />
 
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-brand-50 border-2 border-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-sm font-semibold text-brand-600 uppercase tracking-wide">
-              {otpType === "email" ? "Email" : "Phone"}
-            </span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Check your {otpType}</h1>
-          <p className="text-slate-500 mt-1">
-            We sent a 6-digit code to{" "}
-            <span className="font-medium text-slate-700">{maskedTarget}</span>
-          </p>
+      {/* Top bar */}
+      <header className="w-full flex justify-between items-center px-6 py-8 max-w-7xl mx-auto z-10">
+        <div className="text-xl font-serif italic font-bold text-sanctuary-primary tracking-tight">
+          Proposal Card
         </div>
+      </header>
 
-        {/* OTP Input Grid */}
-        <div className="flex gap-2 justify-center mb-6" onPaste={handlePaste}>
-          {code.map((digit, i) => (
-            <input
-              key={i}
-              ref={(el) => { inputRefs.current[i] = el; }}
-              type="text"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleDigitChange(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              disabled={loading}
-              className={`w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl transition-colors focus:outline-none focus:border-brand-500 bg-white
-                ${digit ? "border-brand-400 text-brand-700" : "border-slate-200 text-slate-900"}
-                ${loading ? "opacity-50" : ""}
-              `}
-            />
-          ))}
-        </div>
-
-        {error && (
-          <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2 text-center mb-4">
-            {error}
-          </p>
-        )}
-
-        {loading && (
-          <p className="text-center text-sm text-slate-500 mb-4">Verifying…</p>
-        )}
-
-        {/* Resend */}
-        <div className="text-center">
-          {resendCooldown > 0 ? (
-            <p className="text-sm text-slate-400">Resend in {resendCooldown}s</p>
-          ) : (
+      {/* Main content */}
+      <main className="flex-grow flex items-center justify-center px-4 relative">
+        <div className="w-full max-w-[440px] z-10">
+          <section className="bg-sanctuary-surface-lowest rounded-xl p-10 md:p-12 shadow-[0px_12px_32px_rgba(47,52,46,0.04)] relative overflow-hidden">
+            {/* Back link */}
             <button
-              onClick={handleResend}
-              className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+              onClick={() => router.push("/login")}
+              className="text-sm text-sanctuary-outline hover:text-sanctuary-primary mb-8 flex items-center gap-1 transition-colors"
             >
-              Resend code
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              Back
             </button>
-          )}
+
+            {/* Header */}
+            <div className="mb-10 text-center">
+              <div className="w-12 h-12 bg-sanctuary-primary-container rounded-xl flex items-center justify-center mx-auto mb-5">
+                <span className="material-symbols-outlined text-sanctuary-primary text-[24px]">mail</span>
+              </div>
+              <h1 className="font-serif italic text-3xl text-sanctuary-on-surface mb-3">
+                Check your {otpType}
+              </h1>
+              <p className="text-sanctuary-on-surface-variant text-sm leading-relaxed">
+                We sent a 6-digit code to{" "}
+                <span className="font-semibold text-sanctuary-on-surface">{maskedTarget}</span>
+              </p>
+            </div>
+
+            {/* OTP Input Grid */}
+            <div className="flex gap-3 justify-center mb-8" onPaste={handlePaste}>
+              {code.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleDigitChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  disabled={loading}
+                  className={`w-12 h-14 text-center text-2xl font-bold rounded-lg transition-all duration-200 focus:outline-none
+                    ${digit
+                      ? "bg-sanctuary-primary-container/30 border-2 border-sanctuary-primary text-sanctuary-primary"
+                      : "bg-sanctuary-surface-low border border-sanctuary-outline-variant/15 text-sanctuary-on-surface"
+                    }
+                    ${loading ? "opacity-50" : ""}
+                    focus:border-sanctuary-primary focus:shadow-[0_0_0_2px_rgba(70,101,100,0.1)]
+                  `}
+                />
+              ))}
+            </div>
+
+            {error && (
+              <p className="text-sm text-sanctuary-error bg-sanctuary-tertiary/5 rounded-lg px-3 py-2 text-center mb-4">
+                {error}
+              </p>
+            )}
+
+            {loading && (
+              <p className="text-center text-sm text-sanctuary-outline mb-4">Verifying…</p>
+            )}
+
+            {/* Resend */}
+            <div className="text-center">
+              {resendCooldown > 0 ? (
+                <p className="text-sm text-sanctuary-outline">Resend in {resendCooldown}s</p>
+              ) : (
+                <button
+                  onClick={handleResend}
+                  className="text-sm text-sanctuary-primary hover:text-sanctuary-primary-dim font-semibold transition-colors"
+                >
+                  Resend code
+                </button>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="my-8 flex items-center gap-4">
+              <div className="h-[1px] flex-grow bg-sanctuary-surface-container" />
+              <span className="text-[10px] uppercase tracking-widest text-sanctuary-outline">Secure Verification</span>
+              <div className="h-[1px] flex-grow bg-sanctuary-surface-container" />
+            </div>
+
+            {/* Security note */}
+            <div className="bg-sanctuary-surface-low rounded-lg p-4 flex items-start gap-3 text-left">
+              <span className="material-symbols-outlined text-sanctuary-primary text-[20px] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+              <p className="text-[11px] leading-relaxed text-sanctuary-on-surface-variant">
+                This code expires in 10 minutes. If you didn&apos;t request this, you can safely ignore it.
+              </p>
+            </div>
+          </section>
+
+          {/* Footer */}
+          <footer className="mt-8 flex flex-col items-center gap-4">
+            <nav className="flex gap-6">
+              <a href="/terms" className="text-[10px] uppercase tracking-widest text-sanctuary-outline hover:text-sanctuary-primary transition-colors">Terms of Service</a>
+              <a href="/privacy-policy" className="text-[10px] uppercase tracking-widest text-sanctuary-outline hover:text-sanctuary-primary transition-colors">Privacy Policy</a>
+            </nav>
+          </footer>
+        </div>
+      </main>
+
+      {/* Side graphic (desktop) */}
+      <div className="hidden lg:block fixed right-0 top-0 h-full w-1/4 pointer-events-none">
+        <div className="h-full w-full relative overflow-hidden">
+          <div className="absolute inset-0 bg-sanctuary-primary/5" />
+          <div className="absolute bottom-12 left-0 right-0 px-12">
+            <blockquote className="font-serif italic text-sanctuary-primary-dim text-lg leading-relaxed">
+              &ldquo;Finding a partner is a sacred journey. We provide the space to treat it as such.&rdquo;
+            </blockquote>
+          </div>
         </div>
       </div>
     </div>

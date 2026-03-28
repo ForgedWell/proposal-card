@@ -46,23 +46,25 @@ export default function CardPanel({ profile }: { profile: Profile }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold text-slate-900">Your Card</h2>
-        <span className={`text-xs font-medium px-2 py-1 rounded-full ${active ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+    <div className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="font-serif text-xl text-sanctuary-on-surface">Card Status</h3>
+        <span className={`px-3 py-1 text-[10px] font-bold rounded-full uppercase tracking-widest ${
+          active ? "bg-sanctuary-primary text-sanctuary-on-primary" : "bg-sanctuary-surface-high text-sanctuary-outline"
+        }`}>
           {active ? "Live" : "Inactive"}
         </span>
       </div>
 
       {active && cardUrl && (
-        <div className="mb-4 space-y-4">
-          <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between gap-3">
-            <a href={cardUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-600 hover:underline font-medium truncate">
+        <div className="space-y-4">
+          <div className="bg-sanctuary-surface-low rounded-lg p-4 flex items-center justify-between gap-3">
+            <a href={cardUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-sanctuary-primary hover:underline font-medium truncate">
               {cardUrl}
             </a>
             <button
               onClick={() => navigator.clipboard.writeText(cardUrl)}
-              className="text-xs text-slate-400 hover:text-slate-600 shrink-0"
+              className="text-xs text-sanctuary-outline hover:text-sanctuary-on-surface shrink-0"
             >
               Copy
             </button>
@@ -71,31 +73,31 @@ export default function CardPanel({ profile }: { profile: Profile }) {
           {qrSvg && (
             <div className="flex flex-col items-center gap-2">
               <div
-                className="w-48 h-48 rounded-xl overflow-hidden border border-slate-100"
+                className="w-40 h-40 rounded-xl overflow-hidden border border-sanctuary-surface-high"
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
-              <p className="text-xs text-slate-400">Scan to view your card</p>
+              <p className="text-xs text-sanctuary-outline">Scan to view your card</p>
             </div>
           )}
         </div>
       )}
 
       {!active && (
-        <p className="text-sm text-slate-500 mb-4">
+        <p className="text-sm text-sanctuary-on-surface-variant">
           Activate your card to get a shareable URL and QR code.
         </p>
       )}
 
-      {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+      {error && <p className="text-xs text-sanctuary-error">{error}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <button
           onClick={toggleCard}
           disabled={loading}
-          className={`text-sm font-medium px-4 py-2 rounded-xl transition-colors ${
+          className={`text-sm font-medium px-6 py-3 rounded-xl transition-colors ${
             active
-              ? "bg-red-50 text-red-600 hover:bg-red-100"
-              : "btn-primary"
+              ? "bg-sanctuary-tertiary/10 text-sanctuary-tertiary hover:bg-sanctuary-tertiary/20"
+              : "btn-primary max-w-[200px]"
           }`}
         >
           {loading ? "…" : active ? "Deactivate card" : "Activate card"}
@@ -122,7 +124,7 @@ export default function CardPanel({ profile }: { profile: Profile }) {
               }
             }}
             disabled={downloading}
-            className="text-sm font-medium px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            className="text-sm font-medium px-6 py-3 rounded-xl bg-sanctuary-surface-low text-sanctuary-on-surface hover:bg-sanctuary-surface-container transition-colors"
           >
             {downloading ? "…" : "Download PDF"}
           </button>

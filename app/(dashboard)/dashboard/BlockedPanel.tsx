@@ -34,24 +34,24 @@ export default function BlockedPanel() {
   if (loading || blocks.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6">
-      <h2 className="font-semibold text-slate-900 mb-1">Blocked Contacts</h2>
-      <p className="text-xs text-slate-400 mb-4">
+    <div className="bg-sanctuary-surface-lowest rounded-xl p-8 space-y-6">
+      <h3 className="font-serif text-xl text-sanctuary-on-surface">Blocked Contacts</h3>
+      <p className="text-sm text-sanctuary-on-surface-variant">
         These contacts are prevented from sending you requests.
       </p>
 
       <div className="space-y-2">
         {blocks.map(b => (
-          <div key={b.id} className="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg">
+          <div key={b.id} className="flex items-center justify-between py-3 px-4 bg-sanctuary-surface-low rounded-lg">
             <div>
-              <p className="text-sm text-slate-700">{b.contact}</p>
-              <p className="text-xs text-slate-400">
+              <p className="text-sm text-sanctuary-on-surface">{b.contact}</p>
+              <p className="text-xs text-sanctuary-outline">
                 {new Date(b.createdAt).toLocaleDateString()}
               </p>
             </div>
             <button
               onClick={() => unblock(b.contact)}
-              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              className="text-xs text-sanctuary-outline hover:text-sanctuary-on-surface transition-colors"
             >
               Unblock
             </button>
