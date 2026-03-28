@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect } from "react";
 
-type Tab = "dashboard" | "card-designer" | "profile" | "guardian" | "safety";
+type Tab = "dashboard" | "card-designer" | "profile" | "guardian" | "messages" | "safety";
 
 interface NavItem {
   id: Tab;
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "card-designer", label: "Card Customizer",   icon: "palette",       mobileLabel: "Card",     mobileIcon: "palette" },
   { id: "profile",       label: "Profile",           icon: "person",        mobileLabel: "Edit",     mobileIcon: "edit_document" },
   { id: "guardian",      label: "Guardian Settings",  icon: "shield_person", mobileLabel: "Guardian", mobileIcon: "security" },
+  { id: "messages",      label: "Messages",          icon: "chat_bubble",   mobileLabel: "Messages", mobileIcon: "chat_bubble" },
   { id: "safety",        label: "Safety",            icon: "lock",          mobileLabel: "Safety",   mobileIcon: "emergency_home" },
 ];
 

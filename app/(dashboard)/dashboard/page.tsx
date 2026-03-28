@@ -9,7 +9,7 @@ import ProfileForm from "./ProfileForm";
 import RequestsPanel from "./RequestsPanel";
 import CardPanel from "./CardPanel";
 import WaliPanel from "./WaliPanel";
-import MessagesPanel from "./MessagesPanel";
+import MessagesTab from "./MessagesTab";
 import BlockedPanel from "./BlockedPanel";
 import CardDesignerPanel from "./CardDesignerPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
@@ -67,12 +67,6 @@ export default async function DashboardPage() {
                 {pendingRequests.length > 0 && (
                   <RequestsPanel requests={pendingRequests} />
                 )}
-                {approvedConnections.length > 0 && (
-                  <MessagesPanel
-                    connections={approvedConnections as any}
-                    currentUserId={user.id}
-                  />
-                )}
               </div>
             </div>
           </div>
@@ -84,6 +78,14 @@ export default async function DashboardPage() {
 
         profile: (
           <ProfileForm profile={profile} />
+        ),
+
+        messages: (
+          <MessagesTab
+            connections={approvedConnections as any}
+            currentUserId={user.id}
+            waliActive={profile.waliActive ?? false}
+          />
         ),
 
         guardian: (
