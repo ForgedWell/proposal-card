@@ -39,6 +39,9 @@ model User {
   languages      Json?                   // string[]
   intention      String?                 // max 140 chars
 
+  // Onboarding
+  onboardingComplete Boolean @default(false)
+
   // QR / card
   cardToken    String?       @unique           // stable token for QR code URL
   cardActive   Boolean       @default(false)   // owner must activate before going public

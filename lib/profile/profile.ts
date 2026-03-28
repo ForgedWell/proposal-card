@@ -108,6 +108,7 @@ const PROFILE_SELECT = {
   wantsChildren: true,
   languages: true,
   intention: true,
+  onboardingComplete: true,
   createdAt: true,
 } as const;
 
