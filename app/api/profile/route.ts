@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { validateSession } from "@/lib/auth/jwt";
 import { getProfile, updateProfile } from "@/lib/profile/profile";
+import { validateIntention } from "@/lib/safety/profanity";
 
 const updateSchema = z.object({
   displayName: z.string().min(1).max(80).optional(),
@@ -59,6 +60,14 @@ export async function PATCH(req: NextRequest) {
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    // Server-side intention validation
+    if (parsed.data.intention) {
+      const check = validateIntention(parsed.data.intention);
+      if (!check.valid) {
+        return NextResponse.json({ error: check.error }, { status: 400 });
+      }
     }
 
     const updated = await updateProfile(user.id, parsed.data);

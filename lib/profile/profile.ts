@@ -202,6 +202,7 @@ export async function getPublicCard(slug: string) {
       cardToken: true,
       cardTemplate: true,
       cardColor: true,
+      waliActive: true,
       fieldVisibility: true,
     },
   });

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Country, State, City } from "country-state-city";
-import { containsProfanity } from "@/lib/safety/profanity";
+import { validateIntention } from "@/lib/safety/profanity";
 
 // ─── Option constants ────────────────────────────────────────────────────────
 
@@ -133,10 +133,13 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
       return;
     }
 
-    // Profanity check on intention
-    if (intention && containsProfanity(intention)) {
-      setError("Please keep your intention statement respectful.");
-      return;
+    // Intention dignity check (client-side — also enforced server-side)
+    if (intention) {
+      const check = validateIntention(intention);
+      if (!check.valid) {
+        setError(check.error!);
+        return;
+      }
     }
 
     setSaving(true);

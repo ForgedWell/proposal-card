@@ -7,6 +7,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 interface Props {
   ownerId: string;
   ownerSlug: string;
+  accentColor?: string;
 }
 
 const schema = z.object({
@@ -17,7 +18,7 @@ const schema = z.object({
 
 type Step = "idle" | "form" | "submitting" | "done" | "error";
 
-export default function ContactButton({ ownerId, ownerSlug }: Props) {
+export default function ContactButton({ ownerId, ownerSlug, accentColor }: Props) {
   const [step, setStep] = useState<Step>("idle");
   const [form, setForm] = useState({ name: "", contact: "", intent: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -92,7 +93,8 @@ export default function ContactButton({ ownerId, ownerSlug }: Props) {
     return (
       <button
         onClick={() => setStep("form")}
-        className="btn-primary w-full"
+        className="w-full py-4 font-semibold text-white rounded-xl transition-opacity hover:opacity-90 active:scale-[0.98]"
+        style={accentColor ? { backgroundColor: accentColor } : undefined}
       >
         Request Contact
       </button>
@@ -167,14 +169,15 @@ export default function ContactButton({ ownerId, ownerSlug }: Props) {
         <button
           type="button"
           onClick={() => setStep("idle")}
-          className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+          className="flex-1 py-2.5 rounded-xl border border-sanctuary-surface-high text-sm text-sanctuary-outline hover:bg-sanctuary-surface-low transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={step === "submitting" || !smsConsent}
-          className="flex-1 btn-primary py-2.5 text-sm"
+          className="flex-1 py-2.5 text-sm text-white font-semibold rounded-xl transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={accentColor ? { backgroundColor: accentColor } : { backgroundColor: "#466564" }}
         >
           {step === "submitting" ? "Sending…" : "Send Request"}
         </button>
