@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 interface Card3DPreviewProps {
   displayName: string;
@@ -10,38 +10,128 @@ interface Card3DPreviewProps {
   waliActive?: boolean;
 }
 
+const MAX_Y = 35;
+const MAX_X = 25;
+const TOUCH_SENSITIVITY = 0.8;
+
 export default function Card3DPreview({ displayName, location, bio, color, waliActive }: Card3DPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [highlightPos, setHighlightPos] = useState({ x: 50, y: 50 });
+  const [hasGyro, setHasGyro] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number; rotX: number; rotY: number } | null>(null);
 
-  const handleMove = useCallback((clientX: number, clientY: number) => {
+  // Gyroscope support for mobile
+  useEffect(() => {
+    if (typeof window === "undefined" || !("DeviceOrientationEvent" in window)) return;
+
+    let active = false;
+
+    function handleOrientation(e: DeviceOrientationEvent) {
+      if (!active || e.gamma === null || e.beta === null) return;
+      // gamma: left-right tilt (-90..90), beta: front-back tilt (-180..180)
+      const y = Math.max(-MAX_Y, Math.min(MAX_Y, e.gamma * 0.7));
+      const x = Math.max(-MAX_X, Math.min(MAX_X, (e.beta - 45) * 0.5));
+      setRotation({ x, y });
+      // Map to highlight
+      const hx = ((y / MAX_Y) * 0.5 + 0.5) * 100;
+      const hy = ((1 - (x / MAX_X) * 0.5 - 0.5)) * 100;
+      setHighlightPos({ x: hx, y: hy });
+    }
+
+    // Try requesting permission (iOS 13+)
+    const doe = DeviceOrientationEvent as any;
+    if (typeof doe.requestPermission === "function") {
+      doe.requestPermission().then((state: string) => {
+        if (state === "granted") {
+          active = true;
+          setHasGyro(true);
+          window.addEventListener("deviceorientation", handleOrientation);
+        }
+      }).catch(() => {});
+    } else {
+      // Android / older iOS — just listen
+      const testHandler = (e: DeviceOrientationEvent) => {
+        if (e.gamma !== null) {
+          active = true;
+          setHasGyro(true);
+        }
+        window.removeEventListener("deviceorientation", testHandler);
+        if (active) window.addEventListener("deviceorientation", handleOrientation);
+      };
+      window.addEventListener("deviceorientation", testHandler);
+    }
+
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+    };
+  }, []);
+
+  // Mouse tracking — relative to viewport for wider range
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const el = containerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const x = (clientX - rect.left) / rect.width;
-    const y = (clientY - rect.top) / rect.height;
-    const rotateY = (x - 0.5) * 24;  // ±12 degrees
-    const rotateX = (0.5 - y) * 16;  // ±8 degrees
+    // Track relative to a padded area around the card (2x card size centered)
+    const padX = rect.width * 0.5;
+    const padY = rect.height * 0.5;
+    const normX = (e.clientX - (rect.left - padX)) / (rect.width + padX * 2);
+    const normY = (e.clientY - (rect.top - padY)) / (rect.height + padY * 2);
+    const clampedX = Math.max(0, Math.min(1, normX));
+    const clampedY = Math.max(0, Math.min(1, normY));
+
+    const rotateY = (clampedX - 0.5) * 2 * MAX_Y;
+    const rotateX = (0.5 - clampedY) * 2 * MAX_X;
     setRotation({ x: rotateX, y: rotateY });
-    setHighlightPos({ x: x * 100, y: y * 100 });
+    setHighlightPos({ x: clampedX * 100, y: clampedY * 100 });
   }, []);
 
-  function handleMouseMove(e: React.MouseEvent) {
-    handleMove(e.clientX, e.clientY);
+  // Touch drag (fallback when no gyro)
+  function handleTouchStart(e: React.TouchEvent) {
+    if (hasGyro) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    setIsHovering(true);
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      rotX: rotation.x,
+      rotY: rotation.y,
+    };
   }
 
   function handleTouchMove(e: React.TouchEvent) {
+    if (hasGyro) return;
     const touch = e.touches[0];
-    if (touch) handleMove(touch.clientX, touch.clientY);
+    const start = touchStartRef.current;
+    if (!touch || !start) return;
+
+    const dx = (touch.clientX - start.x) * TOUCH_SENSITIVITY;
+    const dy = (touch.clientY - start.y) * TOUCH_SENSITIVITY;
+
+    const rotateY = Math.max(-MAX_Y, Math.min(MAX_Y, start.rotY + dx * 0.3));
+    const rotateX = Math.max(-MAX_X, Math.min(MAX_X, start.rotX - dy * 0.3));
+    setRotation({ x: rotateX, y: rotateY });
+
+    const hx = ((rotateY / MAX_Y) * 0.5 + 0.5) * 100;
+    const hy = ((1 - (rotateX / MAX_X) * 0.5 - 0.5)) * 100;
+    setHighlightPos({ x: hx, y: hy });
   }
 
-  function handleEnter() {
+  function handleTouchEnd() {
+    if (hasGyro) return;
+    setIsHovering(false);
+    touchStartRef.current = null;
+    setRotation({ x: 0, y: 0 });
+    setHighlightPos({ x: 50, y: 50 });
+  }
+
+  function handleMouseEnter() {
     setIsHovering(true);
   }
 
-  function handleLeave() {
+  function handleMouseLeave() {
     setIsHovering(false);
     setRotation({ x: 0, y: 0 });
     setHighlightPos({ x: 50, y: 50 });
@@ -55,22 +145,24 @@ export default function Card3DPreview({ displayName, location, bio, color, waliA
       className="w-full max-w-md mx-auto"
       style={{ perspective: "1000px" }}
       onMouseMove={handleMouseMove}
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
-      onTouchStart={handleEnter}
-      onTouchEnd={handleLeave}
+      onTouchEnd={handleTouchEnd}
     >
       <div
-        className="relative w-full rounded-2xl overflow-hidden select-none"
+        className="relative w-full rounded-2xl overflow-hidden select-none will-change-transform"
         style={{
           aspectRatio: "1.586 / 1",
           background: `linear-gradient(145deg, ${color} 0%, ${color}dd 50%, ${color}bb 100%)`,
-          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-          transition: isHovering ? "transform 0.1s ease" : "transform 0.5s ease",
+          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(${isHovering ? 1.05 : 1})`,
+          transition: isHovering
+            ? "transform 0.1s ease, box-shadow 0.2s ease"
+            : "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s ease",
           transformStyle: "preserve-3d",
           boxShadow: isHovering
-            ? "0 20px 40px rgba(0,0,0,0.15), 0 8px 16px rgba(0,0,0,0.1)"
+            ? "0 25px 50px rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.12)"
             : "0 12px 32px rgba(47,52,46,0.12)",
         }}
       >
@@ -78,8 +170,10 @@ export default function Card3DPreview({ displayName, location, bio, color, waliA
         <div
           className="absolute inset-0 pointer-events-none z-10 rounded-2xl"
           style={{
-            background: `radial-gradient(circle at ${highlightPos.x}% ${highlightPos.y}%, rgba(255,255,255,${isHovering ? 0.15 : 0}) 0%, transparent 60%)`,
-            transition: isHovering ? "background 0.1s ease" : "background 0.5s ease",
+            background: `radial-gradient(ellipse 60% 60% at ${highlightPos.x}% ${highlightPos.y}%, rgba(255,255,255,${isHovering ? 0.2 : 0}) 0%, transparent 70%)`,
+            transition: isHovering
+              ? "background 0.1s ease"
+              : "background 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         />
 
