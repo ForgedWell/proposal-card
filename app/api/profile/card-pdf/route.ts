@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     cardColor: profile.cardColor ?? undefined,
   });
 
-  return new NextResponse(pdf, {
+  return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="proposal-card.pdf"`,

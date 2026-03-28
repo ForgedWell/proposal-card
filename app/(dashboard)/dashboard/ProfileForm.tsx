@@ -19,7 +19,7 @@ interface Profile {
   slug?: string | null;
   photoUrl?: string | null;
   links?: unknown;
-  fieldVisibility?: FieldVisibility | null;
+  fieldVisibility?: unknown;
 }
 
 export default function ProfileForm({ profile }: { profile: Profile }) {
@@ -34,7 +34,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
     Array.isArray(profile.links) ? (profile.links as Link[]) : []
   );
   const [visibility, setVisibility] = useState<FieldVisibility>(
-    { ...DEFAULT_VIS, ...(profile.fieldVisibility ?? {}) }
+    { ...DEFAULT_VIS, ...((profile.fieldVisibility as Partial<FieldVisibility>) ?? {}) }
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved]   = useState(false);
