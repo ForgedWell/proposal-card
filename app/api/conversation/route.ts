@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
           id: true,
           body: true,
           senderId: true,
+          senderRole: true,
           createdAt: true,
         },
       },
@@ -96,12 +97,13 @@ export async function POST(req: NextRequest) {
     const senderId = senderRole === "owner" ? connection.ownerId : (connection.prospectId ?? "anonymous");
     const recipientId = senderRole === "owner" ? (connection.prospectId ?? "anonymous") : connection.ownerId;
 
-    // Create message (using raw create since sendMessage requires both users to exist)
+    // Create message — use ownerId as FK placeholder when requester has no account
     const message = await db.message.create({
       data: {
         connectionRequestId: connection.id,
-        senderId: senderId === "anonymous" ? connection.ownerId : senderId, // placeholder for schema FK
+        senderId: senderId === "anonymous" ? connection.ownerId : senderId,
         recipientId: recipientId === "anonymous" ? connection.ownerId : recipientId,
+        senderRole,
         body,
       },
     });

@@ -71,10 +71,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not a party to this connection" }, { status: 403 });
     }
 
+    const senderRole = connection.ownerId === user.id ? "owner" : "requester";
+
     const message = await sendMessage({
       connectionRequestId: parsed.data.connectionId,
       senderId:    user.id,
       recipientId,
+      senderRole,
       body:        parsed.data.body,
     });
 

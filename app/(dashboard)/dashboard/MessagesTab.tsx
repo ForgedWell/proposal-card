@@ -9,7 +9,7 @@ interface Connection {
   ownerId: string;
   prospectId: string | null;
   status: string;
-  messages: { body: string; createdAt: string }[];
+  messages: { body: string; createdAt: string; senderId?: string; senderRole?: string | null }[];
   waliNotes?: { content: string; createdAt: string; wali: { displayName: string | null } }[];
 }
 
@@ -17,6 +17,7 @@ interface Message {
   id: string;
   body: string;
   senderId: string;
+  senderRole?: string | null;
   createdAt: string;
   sender: { id: string; displayName: string | null; email: string | null };
 }
@@ -140,8 +141,19 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
           <div className="flex-1 overflow-y-auto">
             {connections.map(conn => {
               const name = conn.prospectName ?? conn.prospectContact ?? "Unknown";
-              const lastMsg = conn.messages[0]?.body;
-              const lastTime = conn.messages[0]?.createdAt;
+              const lastMsgObj = conn.messages[0];
+              const lastTime = lastMsgObj?.createdAt;
+
+              // Determine preview prefix
+              let lastMsg = lastMsgObj?.body ?? "";
+              if (lastMsgObj) {
+                const isOwner = conn.ownerId === currentUserId;
+                const sentByMe = lastMsgObj.senderRole
+                  ? (isOwner ? lastMsgObj.senderRole === "owner" : lastMsgObj.senderRole === "requester")
+                  : lastMsgObj.senderId === currentUserId;
+                const prefix = sentByMe ? "You" : (conn.prospectName?.split(" ")[0] ?? "Them");
+                lastMsg = `${prefix}: ${lastMsgObj.body}`;
+              }
               return (
                 <button
                   key={conn.id}
@@ -218,7 +230,11 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
                   <p className="text-xs text-sanctuary-outline text-center">No messages yet. Start the conversation.</p>
                 )}
                 {messages.map(msg => {
-                  const isMe = msg.senderId === currentUserId;
+                  // Use senderRole when available (handles pre-account requester where senderId = ownerId for both)
+                  const isOwner = active.ownerId === currentUserId;
+                  const isMe = msg.senderRole
+                    ? (isOwner ? msg.senderRole === "owner" : msg.senderRole === "requester")
+                    : msg.senderId === currentUserId;
                   return (
                     <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                       <div className="max-w-[75%] space-y-0.5">

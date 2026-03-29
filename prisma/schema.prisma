@@ -186,6 +186,7 @@ model Message {
   connectionRequestId String
   senderId            String
   recipientId         String
+  senderRole          String?                             // "owner" or "requester" — for pre-account disambiguation
   body                String
   readAt              DateTime?
   createdAt           DateTime          @default(now())

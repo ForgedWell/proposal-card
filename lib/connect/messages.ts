@@ -8,6 +8,7 @@ export async function sendMessage(input: {
   connectionRequestId: string;
   senderId: string;
   recipientId: string;
+  senderRole?: string;
   body: string;
 }) {
   const connection = await db.connectionRequest.findUnique({
@@ -28,6 +29,7 @@ export async function sendMessage(input: {
       connectionRequestId: input.connectionRequestId,
       senderId:            input.senderId,
       recipientId:         input.recipientId,
+      senderRole:          input.senderRole ?? null,
       body:                input.body,
     },
     include: { sender: { select: { id: true, displayName: true, email: true } } },
@@ -57,7 +59,11 @@ export async function getThread(connectionRequestId: string, userId: string) {
   return db.message.findMany({
     where: { connectionRequestId },
     orderBy: { createdAt: "asc" },
-    include: { sender: { select: { id: true, displayName: true, email: true } } },
+    select: {
+      id: true, body: true, senderId: true, senderRole: true,
+      recipientId: true, readAt: true, createdAt: true,
+      sender: { select: { id: true, displayName: true, email: true } },
+    },
   });
 }
 
@@ -74,6 +80,7 @@ export async function getApprovedConnections(userId: string) {
       messages: {
         orderBy: { createdAt: "desc" },
         take: 1,
+        select: { body: true, createdAt: true, senderId: true, senderRole: true },
       },
     },
   });
