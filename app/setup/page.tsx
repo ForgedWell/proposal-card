@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Country, City } from "country-state-city";
 
@@ -11,6 +11,21 @@ const YEARS = Array.from({ length: 80 }, (_, i) => currentYear - 18 - i);
 
 export default function SetupPage() {
   const router = useRouter();
+
+  // Guard: bounce out if already completed
+  useEffect(() => {
+    fetch("/api/profile")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.profile?.profileSetupComplete) {
+          router.replace("/dashboard");
+        } else if (!data?.profile?.onboardingComplete) {
+          router.replace("/onboarding");
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
   const [name, setName] = useState("");
   const [month, setMonth] = useState("");
   const [day, setDay] = useState("");
@@ -48,10 +63,11 @@ export default function SetupPage() {
         setError(data.error ?? "Something went wrong");
         return;
       }
+      // Wait for DB commit to propagate through pooler
+      await new Promise(r => setTimeout(r, 300));
       router.push("/dashboard");
     } catch {
       setError("Network error");
-    } finally {
       setSaving(false);
     }
   }

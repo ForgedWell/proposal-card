@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const SCREENS = [
@@ -34,21 +34,46 @@ const SCREENS = [
 export default function OnboardingPage() {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState<"left" | "right">("left");
   const [completing, setCompleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Guard: if already completed, bounce out
+  useEffect(() => {
+    fetch("/api/profile")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.profile?.onboardingComplete) {
+          router.replace(data.profile.profileSetupComplete ? "/dashboard" : "/setup");
+        }
+      })
+      .catch(() => {});
+  }, [router]);
 
   const completeOnboarding = useCallback(async () => {
+    if (completing) return; // prevent double-clicks
     setCompleting(true);
-    await fetch("/api/onboarding", { method: "POST" });
-    router.push("/dashboard");
-  }, [router]);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/onboarding", { method: "POST" });
+      if (!res.ok) throw new Error("Failed to save");
+
+      // Wait a beat for DB commit to propagate through pooler
+      await new Promise(r => setTimeout(r, 300));
+
+      // Redirect to setup (not dashboard — dashboard would redirect back here if race condition)
+      router.push("/setup");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setCompleting(false);
+    }
+  }, [completing, router]);
 
   function next() {
     if (current === SCREENS.length - 1) {
       completeOnboarding();
       return;
     }
-    setDirection("left");
     setCurrent(c => c + 1);
   }
 
@@ -78,7 +103,8 @@ export default function OnboardingPage() {
         {current < SCREENS.length - 1 && (
           <button
             onClick={skip}
-            className="text-[11px] uppercase tracking-widest text-sanctuary-outline hover:text-sanctuary-primary transition-colors"
+            disabled={completing}
+            className="text-[11px] uppercase tracking-widest text-sanctuary-outline hover:text-sanctuary-primary transition-colors disabled:opacity-50"
           >
             Skip
           </button>
@@ -120,14 +146,18 @@ export default function OnboardingPage() {
               </p>
             )}
 
+            {error && (
+              <p className="text-sm text-sanctuary-error bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>
+            )}
+
             <button
               onClick={next}
               disabled={completing}
               className="w-full max-w-[280px] mx-auto py-4 font-medium text-white rounded-xl transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
               style={{ backgroundColor: "#2D5A52" }}
             >
-              <span>{completing ? "Loading…" : screen.button}</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              <span>{completing ? "Setting up your account…" : screen.button}</span>
+              {!completing && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
             </button>
           </div>
         </div>
