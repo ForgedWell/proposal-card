@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { validateIntention } from "@/lib/safety/profanity";
+import { validateMessage } from "@/lib/safety/profanity";
 
 const MESSAGE_LIMIT = 2;
 
@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
 
     const { token, body, senderRole } = parsed.data;
 
-    // Profanity + dignity check
-    const check = validateIntention(body);
+    // Dignity filter on message content
+    const check = validateMessage(body);
     if (!check.valid) {
       return NextResponse.json({ error: check.error }, { status: 400 });
     }

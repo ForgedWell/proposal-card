@@ -53,6 +53,7 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
   const [loading, setLoading] = useState(false);
   const [connStatus, setConnStatus] = useState(active?.status ?? "");
   const [otherTyping, setOtherTyping] = useState(false);
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +84,7 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
     fetchMessages(active.id);
   }, [active, fetchMessages]);
 
-  // Supabase Realtime: new messages
+  // Supabase Realtime: new messages (with debug logging)
   useEffect(() => {
     if (!active) return;
 
@@ -93,6 +94,7 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `connectionRequestId=eq.${active.id}` },
         (payload) => {
+          console.log("[Realtime] message received:", payload.new);
           const newMsg = payload.new as any;
           setMessages((prev) => {
             if (prev.some(m => m.id === newMsg.id)) return prev;
@@ -108,10 +110,23 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
           scrollToBottom();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[Realtime] subscription status:", status);
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [active, scrollToBottom]);
+
+  // Fallback polling (catches missed messages, iOS Safari background)
+  useEffect(() => {
+    if (!active) return;
+    const poll = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchMessages(active.id);
+      }
+    }, 5000);
+    return () => clearInterval(poll);
+  }, [active, fetchMessages]);
 
   // Supabase Realtime: connection status changes
   useEffect(() => {
@@ -222,8 +237,8 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
   return (
     <div className="bg-sanctuary-surface-lowest rounded-xl overflow-hidden">
       <div className="flex h-[560px]">
-        {/* Left: Conversation list */}
-        <div className="w-[280px] border-r border-sanctuary-surface-low flex flex-col shrink-0">
+        {/* Left: Conversation list — hidden on mobile when in chat view */}
+        <div className={`w-full md:w-[280px] border-r border-sanctuary-surface-low flex flex-col shrink-0 ${mobileView === "chat" ? "hidden md:flex" : "flex"}`}>
           <div className="p-4 border-b border-sanctuary-surface-low">
             <p className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Conversations</p>
           </div>
@@ -244,7 +259,7 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
               return (
                 <button
                   key={conn.id}
-                  onClick={() => setActive(conn)}
+                  onClick={() => { setActive(conn); setMobileView("chat"); }}
                   className={`w-full text-left px-4 py-3.5 border-b border-sanctuary-surface-low transition-colors ${
                     active?.id === conn.id ? "bg-sanctuary-primary-container/20" : "hover:bg-sanctuary-surface-low"
                   }`}
@@ -266,16 +281,24 @@ export default function MessagesTab({ connections, currentUserId, waliActive }: 
           </div>
         </div>
 
-        {/* Right: Active thread */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Right: Active thread — hidden on mobile when in list view */}
+        <div className={`flex-1 flex flex-col min-w-0 ${mobileView === "list" ? "hidden md:flex" : "flex"}`}>
           {active ? (
             <>
-              {/* Header */}
+              {/* Header with back button on mobile */}
               <div className="px-5 py-4 border-b border-sanctuary-surface-low">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-sanctuary-on-surface">
-                    {active.prospectName ?? active.prospectContact ?? "Unknown"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setMobileView("list")}
+                      className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-sanctuary-surface-low transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-sanctuary-outline">arrow_back</span>
+                    </button>
+                    <p className="text-sm font-semibold text-sanctuary-on-surface">
+                      {active.prospectName ?? active.prospectContact ?? "Unknown"}
+                    </p>
+                  </div>
                   <div className="flex items-center gap-2">
                     {waliActive && (
                       <span className="flex items-center gap-1 text-[10px] text-sanctuary-primary">

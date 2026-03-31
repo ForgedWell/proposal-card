@@ -3,6 +3,7 @@ import { z } from "zod";
 import { validateSession } from "@/lib/auth/jwt";
 import { sendMessage, getThread } from "@/lib/connect/messages";
 import { db } from "@/lib/db";
+import { validateMessage } from "@/lib/safety/profanity";
 
 async function getUser(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
@@ -44,6 +45,12 @@ export async function POST(req: NextRequest) {
     const parsed = sendSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    // Dignity filter on message content
+    const msgCheck = validateMessage(parsed.data.body);
+    if (!msgCheck.valid) {
+      return NextResponse.json({ error: msgCheck.error }, { status: 400 });
     }
 
     const connection = await db.connectionRequest.findUnique({
