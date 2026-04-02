@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Country, City } from "country-state-city";
+import LocationSelector from "@/components/LocationSelector";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -32,15 +32,9 @@ export default function SetupPage() {
   const [year, setYear] = useState("");
   const [gender, setGender] = useState<"brother" | "sister" | "">("");
   const [country, setCountry] = useState("United States");
-  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const countries = useMemo(() => Country.getAllCountries(), []);
-  const cities = useMemo(() => {
-    const c = countries.find(c => c.name === country);
-    return c ? City.getCitiesOfCountry(c.isoCode) ?? [] : [];
-  }, [country, countries]);
 
   const isValid = name.trim() && month && day && year && gender && country;
 
@@ -56,7 +50,7 @@ export default function SetupPage() {
       const res = await fetch("/api/profile/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName: name.trim(), dateOfBirth, gender, country, city: city || undefined }),
+        body: JSON.stringify({ fullName: name.trim(), dateOfBirth, gender, country, state: state || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -163,28 +157,11 @@ export default function SetupPage() {
               </div>
 
               {/* Location */}
-              <div className="space-y-1">
-                <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Location</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <select
-                    value={country}
-                    onChange={e => { setCountry(e.target.value); setCity(""); }}
-                    className="input-field text-sm"
-                    required
-                  >
-                    <option value="">Country</option>
-                    {countries.map(c => <option key={c.isoCode} value={c.name}>{c.name}</option>)}
-                  </select>
-                  <select
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    className="input-field text-sm"
-                  >
-                    <option value="">City (optional)</option>
-                    {cities.slice(0, 500).map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
-              </div>
+              <LocationSelector
+                defaultCountry={country}
+                defaultState={state}
+                onChange={(c, s) => { setCountry(c); setState(s); }}
+              />
 
               {error && (
                 <p className="text-sm text-sanctuary-error bg-red-50 rounded-lg px-3 py-2">{error}</p>

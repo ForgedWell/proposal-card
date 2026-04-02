@@ -9,7 +9,7 @@ const setupSchema = z.object({
   dateOfBirth: z.string().min(1), // ISO date string
   gender:      z.enum(["brother", "sister"]),
   country:     z.string().min(1).max(100),
-  city:        z.string().max(100).optional(),
+  state:       z.string().max(100).optional(),
 });
 
 function calculateAge(dob: Date): number {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { fullName, dateOfBirth, gender, country, city } = parsed.data;
+    const { fullName, dateOfBirth, gender, country, state } = parsed.data;
 
     // Server-side age gate
     const dob = new Date(dateOfBirth);
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const existing = await db.user.findUnique({ where: { id: user.id }, select: { slug: true } });
     const slug = existing?.slug ?? await generateUniqueSlug(fullName);
 
-    const locationParts = [city, country].filter(Boolean);
+    const locationParts = [state, country].filter(Boolean);
 
     await db.user.update({
       where: { id: user.id },
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         gender,
         displayName: fullName,
         country,
-        city: city ?? null,
+        state: state ?? null,
         location: locationParts.join(", "),
         slug,
         profileSetupComplete: true,

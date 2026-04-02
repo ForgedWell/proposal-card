@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Country, State, City } from "country-state-city";
+import LocationSelector from "@/components/LocationSelector";
 import { validateIntention } from "@/lib/safety/profanity";
 
 // ─── Option constants ────────────────────────────────────────────────────────
@@ -98,18 +98,6 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
-
-  // Country/State/City cascading data
-  const countries = useMemo(() => Country.getAllCountries(), []);
-  const states = useMemo(() => {
-    const c = countries.find(c => c.name === country);
-    return c ? State.getStatesOfCountry(c.isoCode) : [];
-  }, [country, countries]);
-  const cities = useMemo(() => {
-    const c = countries.find(c => c.name === country);
-    const s = states.find(s => s.name === state);
-    return c && s ? City.getCitiesOfState(c.isoCode, s.isoCode) : [];
-  }, [country, state, countries, states]);
 
   function toggleVis(field: keyof FieldVisibility) {
     setVisibility(v => ({ ...v, [field]: !v[field] }));
@@ -232,7 +220,7 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
           </div>
         )}
 
-        {/* Location cascade */}
+        {/* Location */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-[0.75rem] tracking-wider uppercase text-sanctuary-outline">Location</label>
@@ -240,34 +228,11 @@ export default function ProfileForm({ profile }: { profile: Profile }) {
               {visibility.location ? "Public" : "Hidden"}
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <select
-              value={country}
-              onChange={e => { setCountry(e.target.value); setState(""); setCity(""); setSaved(false); }}
-              className="input-field text-sm"
-            >
-              <option value="">Country</option>
-              {countries.map(c => <option key={c.isoCode} value={c.name}>{c.name}</option>)}
-            </select>
-            <select
-              value={state}
-              onChange={e => { setState(e.target.value); setCity(""); setSaved(false); }}
-              className="input-field text-sm"
-              disabled={!country}
-            >
-              <option value="">State / Province</option>
-              {states.map(s => <option key={s.isoCode} value={s.name}>{s.name}</option>)}
-            </select>
-            <select
-              value={city}
-              onChange={e => { setCity(e.target.value); setSaved(false); }}
-              className="input-field text-sm"
-              disabled={!state}
-            >
-              <option value="">City</option>
-              {cities.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-            </select>
-          </div>
+          <LocationSelector
+            defaultCountry={country}
+            defaultState={state}
+            onChange={(c, s) => { setCountry(c); setState(s); setSaved(false); }}
+          />
         </div>
 
         {/* Structured bio fields — 2-column grid */}
